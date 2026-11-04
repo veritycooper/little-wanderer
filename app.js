@@ -259,6 +259,34 @@ $('computerInteract').addEventListener('click',()=>{
  say('Time to look something up!');
  lookupResearch();
 });
+$('berryInteract').addEventListener('click',async()=>{
+ if(config.url&&config.token){
+   try{
+     const r=await api('/api/forage',{method:'POST',body:'{}'});
+     if(!r.ok){
+       if(r.status===429)return toast('The berry bushes need a little time to grow back.');
+       throw Error('Could not collect berries');
+     }
+     await sync();
+     say('Fresh berries!');
+     toast('Pip picked a handful of berries. Look in My Day and Journal!');
+   }catch{toast('The brain could not collect berries just now.')}
+ }else{
+   if(!state.lastForageAt||now()-state.lastForageAt>120000){
+     state.lastForageAt=now();
+     state.x=state.location==='grove'?122:116;
+     state.y=75;
+     state.activity='Picking ripe berries from the bushes';
+     state.stats.hunger=clamp(state.stats.hunger+9);
+     state.stats.joy=clamp(state.stats.joy+4);
+     skill('gardening',2);
+     journal('A handful of berries','I picked a few ripe berries from the bushes by the path.');
+     state.decisions.unshift({at:now(),action:'Forage',reason:'The berry bushes looked ready to pick.'});
+     render();save();
+     say('Fresh berries!');
+   }else toast('The berry bushes need time to grow back.');
+ }
+});
 $('mailboxInteract').addEventListener('click',()=>{
  window.PixelWorld?.letterSent();
  switchTab('chat');
