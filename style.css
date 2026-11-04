@@ -180,3 +180,47 @@ body.dark .research:hover{color:#fff}
 .pet-hitbox{position:absolute;z-index:5;transform:translate(-50%,-25%);width:clamp(30px,9%,54px);height:clamp(38px,16%,70px);background:transparent;border:0;cursor:pointer;touch-action:manipulation}
 .pet-hitbox:hover{outline:2px dashed #fff5e3;outline-offset:2px}
 .pet-hitbox:focus-visible{outline:3px solid #fff2db;outline-offset:3px}
+
+/* Readability pass: keep rose palette, use crisp conventional text for copy. */
+body{font-size:14px;line-height:1.55}
+.hero h1,.panel-head h2,.pet-header h2,h3,.curiosity h2,.intention strong,.journal-entry h4,.discovery h4,.view-title h3{
+ font-family:'DM Sans',system-ui,sans-serif;letter-spacing:-.025em;line-height:1.24;font-weight:700;
+}
+.hero h1{font-size:clamp(35px,4vw,52px);letter-spacing:-.045em}
+.panel-head h2{font-size:23px}
+.pet-header h2{font-size:25px}
+.view-title h3,.curiosity h2{font-size:23px}
+h3,.intention strong,.journal-entry h4,.discovery h4{font-size:18px}
+.intro,.curiosity>p:not(.eyebrow),.memory>p:not(.eyebrow),.view-title p:not(.eyebrow),
+.msg,.journal-entry p,.discovery p{font-size:13px;line-height:1.8}
+.tiny,.stat-label,.typing,.world-guide,.panel-foot,.scene-hint{font-size:12px;line-height:1.6}
+.eyebrow{font-size:11px;letter-spacing:1.15px}
+.tab,.chat-form button,.care-actions button,.tag,.link-button{font-size:12px}
+.mast-right .online-label{font-size:12px}
+.muted,.view-title p:not(.eyebrow),.tiny{color:var(--muted)}
+body.dark{
+ --ink:#f1e4ea;--heading:#fff5f7;--muted:#d7c2cd;--quiet:#baa3ae;
+ --rose-deep:#edb9c6;--line-strong:#766170;
+}
+.scene-nav{display:flex;align-items:center;gap:9px;padding:0 19px 14px;flex-wrap:wrap}
+.scene-nav-label{font-size:10px;font-weight:700;letter-spacing:1.3px;color:var(--muted);margin-right:3px}
+.scene-choice{padding:8px 14px;border:1px solid var(--line-strong);color:var(--rose-deep);background:var(--surface);font-size:12px;font-weight:700;transition:background .3s,color .3s}
+.scene-choice:hover{background:var(--rose-pale)}
+.scene-choice.selected{background:var(--rose);border-color:var(--rose);color:#fff}
+.scene-hint{margin-left:auto;color:var(--muted)}
+.world{background:#9ccfe9}
+.world-frame{padding-bottom:2px}
+.world-hud{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700}
+body.dark .scene-choice.selected{color:#241d25}
+body.dark .scene-choice:not(.selected){background:var(--paper-alt)}
+body.dark .scene-choice:hover:not(.selected){background:var(--rose-pale)}
+@media(max-width:620px){
+ .scene-nav{padding:0 10px 12px;gap:7px}
+ .scene-choice{padding:7px 11px}
+ .scene-hint{width:100%;margin:0;font-size:10px}
+ .hero h1{font-size:34px}
+ .panel-head h2{font-size:21px}
+ .view-title h3,.curiosity h2{font-size:22px}
+ .intro,.msg,.journal-entry p,.discovery p{font-size:13px}
+ .world-hud{font-size:10px}
+}
