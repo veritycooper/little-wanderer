@@ -166,3 +166,17 @@ test("foraging and meals route to the right cottage room",()=>{
  activity(world,"read");
  assert.equal(world.room,"study");
 });
+
+
+test("foraging is grounded in the woodland, persists needs and has a cooldown",async()=>{
+ const e=env();
+ await worker.fetch(req("/api/travel","POST",{location:"grove",x:115,y:75,room:"study"}),e);
+ const result=await worker.fetch(req("/api/forage","POST",{}),e);
+ assert.equal(result.status,200);
+ let world=await (await read(e)).json();
+ assert.equal(world.location,"grove");
+ assert.equal(world.activity,"Picking ripe berries from the bushes");
+ assert.equal(world.x,122);
+ assert.ok(world.journal.some(note=>/berries/i.test(note.title)));
+ assert.equal((await worker.fetch(req("/api/forage","POST",{}),e)).status,429);
+});
