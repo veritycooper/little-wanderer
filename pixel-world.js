@@ -225,6 +225,10 @@
   function bubblePosition(){
     const bubble=document.getElementById('bubble');
     if(!bubble)return;
+    const target=document.getElementById('petInteract');
+    const petX=state.location==='cottage'?209:position.x;
+    const petY=state.location==='cottage'?191:position.y;
+    if(target){target.style.left=(petX/W*100)+'%';target.style.top=((petY-20)/H*100)+'%'}
     if(state.location==='cottage'){bubble.style.left='53%';bubble.style.bottom='36%'}
     else{bubble.style.left=Math.max(16,Math.min(85,(position.x/W)*100))+'%';bubble.style.bottom=Math.max(18,Math.min(66,(H-position.y+28)/H*100))+'%'}
   }
