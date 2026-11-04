@@ -64,7 +64,7 @@ def fresh() -> dict:
         "messages": [{"id": str(uuid.uuid4()), "from": "pet", "text": "Hello! I found the loveliest little cottage. I hope we can be friends.", "at": t}],
         "journal": [{"id": str(uuid.uuid4()), "title": "A new beginning", "text": "Today I found a small meadow, a cottage, and so much to learn. I think I will stay.", "at": t}],
         "discoveries": [], "pending": [], "memories": [], "unread": False,
-        "nextAction": t + 30_000, "nextResearch": t + 14 * 60_000
+        "decisions": [], "plan": {"action": "Explore the meadow", "reason": "I feel curious about this new place."}, "nextAction": t + 30_000, "nextResearch": t + 14 * 60_000
     }
 
 
@@ -146,6 +146,10 @@ def activity(world, requested=None):
         s["joy"] = clamp(s["joy"] + (12 if action == "play" else 4))
         category = "gardening" if action == "garden" else "exploring"
         world["skills"][category] = min(100, world["skills"][category] + 2)
+    reasons = {"rest": "I need some sleep.", "feed": "I am hungry.", "read": "I am curious and want to learn.", "garden": "I want to tend the flowers.", "play": "I need some fun.", "reflect": "I want time to think.", "explore": "I want to see more of the meadow."}
+    world.setdefault("decisions", []).insert(0, {"at": stamp(), "action": action.capitalize(), "reason": reasons.get(action, "I felt like exploring.")})
+    world["decisions"] = world["decisions"][:100]
+    world["plan"] = {"action": "Check my needs", "reason": "I will choose again based on how I am feeling."}
     if random.random() < .22:
         note(world, "A little " + action, world["activity"] + ". I want to remember these small moments.")
     world["nextAction"] = stamp() + random.randrange(25_000, 60_000)
@@ -179,16 +183,8 @@ def record_discovery(world, result):
 
 
 def remember(world, letter):
-    # Only explicitly stated, low-stakes preferences, capped and user-inspectable in state exports.
-    patterns = [r"\bI (?:really )?like ([^.!?\n]{3,70})", r"\bmy favou?rite (?:thing|animal|colour|color|food|hobby) is ([^.!?\n]{2,65})"]
-    for pattern in patterns:
-        found = re.search(pattern, letter, flags=re.I)
-        if found:
-            memory = "You told me: " + found.group(0).strip()
-            if memory not in world["memories"]:
-                world["memories"].append(memory)
-            world["memories"] = world["memories"][-20:]
-            return
+    """No implicit saving of personal details. Memories require explicit approval."""
+    return
 
 
 def fallback_reply(world, message):
@@ -337,7 +333,6 @@ def message(payload: Letter, authorization: str | None = Header(default=None)):
         world["pending"].append({"id": str(uuid.uuid4()), "text": content, "due": stamp() + random.randrange(35_000, 105_000)})
         world["stats"]["social"] = clamp(world["stats"]["social"] + 8)
         world["skills"]["friendship"] = min(100, world["skills"]["friendship"] + 2)
-        remember(world, content)
         note(world, "A letter arrived", "You wrote to me today. I want to think before I reply.")
         write_state(world)
     return {"queued": True}
@@ -402,3 +397,36 @@ def adjust_stat(payload: StatAdjustment, authorization: str | None = Header(defa
         write_state(world)
     return {"ok": True}
 
+
+class MemoryNote(BaseModel):
+    text: str = Field(min_length=1, max_length=160)
+
+
+@app.post("/api/memories")
+def add_memory(payload: MemoryNote, authorization: str | None = Header(default=None)):
+    require_token(authorization)
+    memory = payload.text.strip()
+    if not memory:
+        raise HTTPException(status_code=400, detail="Empty memory")
+    with LOCK:
+        world = read_state()
+        world.setdefault("memories", [])
+        if memory not in world["memories"]:
+            if len(world["memories"]) >= 30:
+                raise HTTPException(status_code=400, detail="Memory shelf is full")
+            world["memories"].append(memory)
+        write_state(world)
+    return {"ok": True}
+
+
+@app.delete("/api/memories/{index}")
+def delete_memory(index: int, authorization: str | None = Header(default=None)):
+    require_token(authorization)
+    with LOCK:
+        world = read_state()
+        memories = world.setdefault("memories", [])
+        if index < 0 or index >= len(memories):
+            raise HTTPException(status_code=404, detail="Memory not found")
+        memories.pop(index)
+        write_state(world)
+    return {"ok": True}
