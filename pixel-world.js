@@ -571,6 +571,7 @@
   const isOutside=loc=>loc!=='cottage';
   let state={location:'meadow',room:'study',night:false,x:57,y:64,unread:false};
   let position={x:220,y:205},target={x:220,y:205};
+  let route=[];
   let camera=0,mailPulse=0;
   let last=0,lastWander=0,walking=false;
   const worldPoint=(x,y)=>{
@@ -580,8 +581,9 @@
     const py=132+(Math.max(50,Math.min(79,ny))-50)*3.3;
     if(state.location==='grove'){
       // Keep the stroll on the safe bank or the far-side footpath.
-      return {x:Math.max(45,Math.min(625,px)),
-        y:Math.max(203,Math.min(231,py))};
+      const destX=Math.max(45,Math.min(625,px));
+      return {x:destX,
+        y:destX>=284&&destX<=359?202:Math.max(203,Math.min(231,py))};
     }
     if(state.location==='meadow'){
       const safeY=Math.max(205,Math.min(232,py));
@@ -590,11 +592,28 @@
     }
     return {x:220,y:197};
   };
+  function setCourse(point){
+    route=[];
+    // Walk over the real wooden bridge when travelling between forest banks.
+    // The route uses two landings and planks at the correct y-coordinate.
+    if(state.location==='grove'){
+      const fromLeft=position.x<284;
+      const fromRight=position.x>359;
+      if(fromLeft&&point.x>=284){
+        route=[{x:278,y:202},{x:355,y:202},{...point}];
+      }else if(fromRight&&point.x<=359){
+        route=[{x:367,y:202},{x:289,y:202},{...point}];
+      }else if(position.x>=284&&position.x<=359){
+        route=[{x:point.x>position.x?355:289,y:202},{...point}];
+      }
+    }
+    target=route.length?route.shift():{...point};
+    lastWander=performance.now();
+  }
   function visit(x,y){
     const point=worldPoint(x,y);
-    target={...point};
-    lastWander=performance.now();
-    return {...target};
+    setCourse(point);
+    return point;
   }
   function update(dt,t){
     if(!isOutside(state.location)){walking=false;return}
@@ -603,13 +622,23 @@
       const step=Math.min(dist,dt*42);
       position.x+=dx/dist*step;position.y+=dy/dist*step;
       walking=true;
-    }else walking=false;
-    if(!walking&&!motion.matches&&t-lastWander>7000){
-      lastWander=t;
-      // Free-roam is local between each persisted destination update.
-      const nx=Math.max(46,Math.min(618,position.x+rand(-64,64)));
-      const ny=Math.max(205,Math.min(231,position.y+rand(-18,18)));
-      target={x:nx,y:ny};
+    }else{
+      walking=false;
+      if(route.length){
+        target=route.shift();walking=true;lastWander=t;
+      }
+    }
+    if(!walking&&!motion.matches&&t-lastWander>7500){
+      const start=position.x;
+      let nx=Math.max(46,Math.min(618,start+rand(-64,64)));
+      if(state.location==='grove'){
+        // Ordinary idle strolls stay on one bank; crossing uses deliberate route.
+        if(start<284)nx=Math.min(nx,278);
+        else if(start>359)nx=Math.max(nx,367);
+        else nx=start;
+      }
+      const ny=Math.max(205,Math.min(230,position.y+rand(-14,14)));
+      setCourse({x:nx,y:state.location==='grove'&&nx>=284&&nx<=359?202:ny});
     }
     const goal=Math.max(0,Math.min(WORLD_W-W,position.x-W*.47));
     camera+=(goal-camera)*Math.min(1,dt*3.3);
@@ -630,7 +659,7 @@
     if(isOutside(state.location))ctx.translate(-Math.round(camera),0);
     scene(p,state.location,t);
     const home=!isOutside(state.location);
-    creature(home?(state.room==='kitchen'?223:315):position.x,
+    creature(home?(state.room==='kitchen'?141:240):position.x,
       home?(state.room==='kitchen'?206:207):position.y,p,t,walking,home);
     ctx.restore();
     moveHitboxes();
@@ -649,7 +678,7 @@
     const b=document.getElementById('petInteract');
     const bubble=document.getElementById('bubble');
     const home=!isOutside(state.location);
-    const x=home?(state.room==='kitchen'?223:315):position.x-camera;
+    const x=home?(state.room==='kitchen'?141:240):position.x-camera;
     const y=home?(state.room==='kitchen'?206:207):position.y;
     if(b){b.style.left=x/W*100+'%';b.style.top=(y-9)/H*100+'%'}
     if(bubble){
@@ -678,15 +707,14 @@
     if(!['study','kitchen'].includes(state.room))state.room='study';
     const point=worldPoint(state.x,state.y);
     if(initial||!last){
-      position={...point};target={...point};
+      position={...point};target={...point};route=[];
       camera=Math.max(0,Math.min(WORLD_W-W,position.x-W*.47));
     }else if(previousLoc!==state.location){
       position={...point};target={...point};
       camera=Math.max(0,Math.min(WORLD_W-W,position.x-W*.47));
       lastWander=performance.now();
     }else if(state.x!==oldX||state.y!==oldY){
-      target={...point};
-      lastWander=performance.now();
+      setCourse(point);
     }
     if(oldRoom!==state.room)lastWander=performance.now();
     if(motion.matches)render(performance.now());
