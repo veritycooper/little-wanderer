@@ -68,11 +68,11 @@ Save an exported backup too. The connection token is stored in browser localStor
 
 ## What the free Cloudflare brain does
 
-- **Scheduled autonomy:** a cron trigger runs every minute, adjusting needs, choosing activities, checking delayed letters and attempting limited Wikipedia research. It does not run a 24/7 continuous process.
+- **Scheduled autonomy:** a cron trigger runs every minute, adjusting needs, choosing activities, checking delayed letters and occasionally suggesting a question. The brain does **not** fetch Wikipedia until you approve the specific question. It does not run a 24/7 continuous process.
 - **AI letters:** uses the documented Workers AI model **@cf/meta/llama-3.2-3b-instruct**, drawing on recent letters, approved memories, journal, discoveries and current activity. Replies are queued rather than instant, and may take a further cron cycle to arrive.
 - **Daily AI cap:** 24 model attempts per UTC day by default, plus Cloudflare's separate free inference quota. If either allowance is exhausted or the model is down, fallback letters still work. Change DAILY_AI_LIMIT in wrangler.toml if desired.
 - **Private persistence:** D1 stores state, research, journals, messages and manually approved memory shelf notes even when the site is closed.
-- **Research:** limited to sourced Wikipedia topics, not arbitrary web browsing or running untrusted code.
+- **Permission-first research:** Pip develops interest-specific questions on her own, then waits for you to approve or decline. An approved question fetches a short sourced Wikipedia excerpt, which is saved with Pip's question and personal observation. No general web crawling or code execution is involved.
 
 The website remains free to use without a brain connection. Cloudflare has separate Workers, D1 and Workers AI quotas that can change; review their official pages before deploying:
 
