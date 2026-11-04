@@ -1,0 +1,27 @@
+# Deployment template for the optional Python AI brain.
+# This does NOT deploy on its own. Connect this repo as a Blueprint in Render.
+# A persistent disk requires a paid service; review pricing before deploying.
+services:
+  - type: web
+    name: little-wanderer-brain
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: PET_API_TOKEN
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: https://veritycooper.github.io
+      - key: DATA_DIR
+        value: /data
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      # Add OPENAI_API_KEY manually in Render's secret environment settings
+      # if you want model-generated replies. No key = local fallback replies.
+    disk:
+      name: wanderer-sqlite
+      mountPath: /data
+      sizeGB: 1
