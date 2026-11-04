@@ -284,3 +284,59 @@ body.dark .scene-choice:hover:not(.selected){background:var(--rose-pale)}
   .letters .view-title p:not(.eyebrow){font-size:11px}
   .messages,#journal,#discoveries,#decisions{padding-right:7px}
 }
+
+
+/* Little Wanderer: an explorable world, a physical mailbox and cottage rooms. */
+.world-object{
+  position:absolute;z-index:5;
+  border:0;background:transparent;
+  cursor:pointer;
+  padding:0;
+  transform:none;
+}
+.world-object:hover,.world-object:focus-visible{
+  outline:2px dashed #fff5df;outline-offset:2px;
+}
+.world-object[hidden],.room-controls[hidden],.roam-controls[hidden]{display:none!important}
+.mailbox-hitbox{min-width:25px;min-height:35px}
+.computer-hitbox{
+  left:48%;top:44%;width:20%;height:28%;
+}
+.room-controls{
+  position:absolute;z-index:7;top:9px;right:9px;
+  display:flex;gap:6px;padding:5px;
+  border:1px solid #a9857b;background:#fff4e6e8;
+}
+.room-button{
+  border:1px solid #b98f80;background:#f5e7da;
+  color:#775345;padding:6px 11px;
+  font:700 11px 'DM Sans',system-ui,sans-serif;
+  cursor:pointer;transition:background .15s;
+}
+.room-button:hover,.room-button.selected{
+  background:#b98992;color:#fff;border-color:#a96b80;
+}
+.roam-controls{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:14px 19px 4px;flex-wrap:wrap;
+}
+.roam-controls button{
+  background:var(--surface);border:1px solid var(--line-strong);
+  color:var(--heading);padding:9px 12px;
+  font:700 12px 'DM Sans',system-ui,sans-serif;
+  cursor:pointer;transition:background .2s;
+}
+.roam-controls button:hover,.roam-controls button:focus-visible{
+  background:var(--rose-pale);
+}
+#roamHint{color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
+body.dark .room-controls{background:#3a2b35ed;border-color:#8b6870}
+body.dark .room-button{background:#59434e;border-color:#856472;color:#ffeced}
+body.dark .room-button.selected{background:var(--rose);color:#25191f}
+@media(max-width:620px){
+  .roam-controls{padding:12px 10px 3px;gap:8px}
+  .roam-controls button{font-size:11px;padding:8px}
+  #roamHint{flex-basis:100%;order:3;text-align:left}
+  .room-controls{right:5px;top:5px;gap:3px}
+  .room-button{padding:5px 7px;font-size:10px}
+}
