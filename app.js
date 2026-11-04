@@ -61,14 +61,67 @@ if(action==='play'){s.joy=clamp(s.joy+17);s.energy=clamp(s.energy-6);skill('expl
 if(Math.random()<.28){journal('A little '+(action==='rest'?'rest':action==='garden'?'garden visit':action==='read'?'reading time':'adventure'),state.activity+'. '+rand(['I wonder what tomorrow will bring.','It felt nice to take my time.','Perhaps I will tell you about it later.','There is so much more I want to learn.']))}
 state.nextAction=now()+55000+Math.floor(Math.random()*50000);renderWorld();updateStats();}
 function applyTime(){let minutes=Math.min(120,Math.max(0,(now()-(state.lastTick||now()))/60000));if(minutes>.1){const d=Math.min(minutes,120);state.stats.hunger=clamp(state.stats.hunger-.17*d);state.stats.energy=clamp(state.stats.energy-(state.location==='cottage'?-0.3:.12)*d);state.stats.social=clamp(state.stats.social-.1*d);state.stats.joy=clamp(state.stats.joy-.07*d);state.stats.curiosity=clamp(state.stats.curiosity+.04*d);}}
-function response(input){const t=input.toLowerCase();let r;if(/hello|hi|hey|morning|evening/.test(t))r=rand(["Oh, hello! I was just exploring the meadow. It's really nice to hear from you.","Hello! I was thinking about the pond and wondering whether its frogs have names."]);else if(/how are|how was|your day|what did you do/.test(t))r="I've been "+state.activity.toLowerCase()+". I feel "+mood()+" today. What have you been up to?";else if(/love|friend|miss/.test(t))r="That makes my ears feel warm. I like having someone to write to, even when we're both busy.";else if(/learn|research|interesting|discover/.test(t))r="I've been curious about "+topic()+". I'd like to learn why things are the way they are, not just remember their names.";else if(/\?/.test(t))r="That's a lovely question. I don't know for sure yet, but perhaps I can put it on my list to investigate. I'm still learning.";else r=rand(["I've been thinking about what you said. Tell me more?","I like hearing little pieces of your day. Today I found myself wondering about "+topic()+".","I was reading your letter in my cottage. Thank you for writing to me."]);return r}
+function response(input){
+ const text=input.toLowerCase().trim();
+ const activity=(state.activity||'wandering through the meadow').toLowerCase();
+ const recent=state.discoveries?.[0];
+ const topInterests=Object.entries(state.interests||{}).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+ const interest=topInterests.length?rand(topInterests.slice(0,5)):'the little things in the woodland';
+ const zone=state.location==='grove'?'the woodland':state.location==='cottage'?'my cottage':'the meadow';
+ const approved=state.memories||[];
+ if(/how are you|how was your day|what did you do|how.s your day/.test(text)){
+   return rand([
+     "I've been "+activity+". "+(state.stats.energy<35?"I think I'm ready for a little nap.":"It's a rather nice day for taking things slowly.")+" How has your day been?",
+     "I was "+activity+" in "+zone+". I keep getting distracted by tiny things that seem much more interesting up close.",
+     "Quite good, thank you. I've been keeping busy in "+zone+", although I do sometimes forget what I was originally doing."
+   ]);
+ }
+ if(/\b(hello|hi pip|hey pip|good morning|good evening|goodnight)\b/.test(text)){
+   return rand([
+     "Hello! I was "+activity+" and nearly lost track of time.",
+     "Oh, there you are. I've found a nice quiet spot to read your letter.",
+     "Hello again! I was thinking about "+interest+" just before you wrote."
+   ]);
+ }
+ if(/remember|memory|forgot/.test(text)){
+   return approved.length
+    ?"I keep the things you've put on my memory shelf. You can check or change them whenever you want."
+    :"My memory shelf is still rather empty. If there's something important to you, you can leave a note there.";
+ }
+ if(/research|learn|discover|read about|interesting fact/.test(text)){
+   return recent
+    ?"I recently discovered something about "+recent.title+". I've saved the article in my discoveries so we can read it together. I've also been curious about "+interest+"."
+    :"I've been wondering about "+interest+". I haven't found a reliable article yet, but I could go exploring the library.";
+ }
+ if(/friend|love you|miss you/.test(text)){
+   return rand([
+     "I like having someone to share these quiet little days with. It makes the cottage feel less empty.",
+     "That's kind of you to say. I might keep this letter nearby for a little while.",
+     "It's lovely to have you here. I was just thinking of going for a wander, but I'm happy to sit and talk."
+   ]);
+ }
+ if(text.includes('?')){
+   return rand([
+     "I don't know the answer for certain, and I don't want to make one up. Perhaps it's something we could explore?",
+     "That's made me curious too. I was "+activity+" when your letter arrived, and now I have something new to think about.",
+     "I'm still figuring lots of things out. What made you think of that?"
+   ]);
+ }
+ return rand([
+   "I've been thinking about what you said. I like hearing the ordinary details of your day.",
+   "Thank you for the letter. I was "+activity+", so it was lovely to have a reason to sit down for a bit.",
+   "I was just wondering about "+interest+". Sometimes I think I could spend a whole afternoon asking questions.",
+   "It's nice to hear from you. I was going to go for a walk through "+zone+" after this.",
+   "I read your message twice. It's funny how even a short letter can give me a lot to think about."
+ ]);
+}
 function sendMessage(){const field=$('message');const text=field.value.trim();if(!text)return;if(text.length>500)return toast('That letter is a little too long.');field.value='';state.messages.push({id:crypto.randomUUID(),from:'you',text,at:now()});state.stats.social=clamp(state.stats.social+9);skill('friendship',2);state.pending.push({id:crypto.randomUUID(),text,due:now()+20000+Math.random()*55000});journal('A letter arrived','You wrote to me today. I want to take a moment to think before I reply.');save();render();}
 function deliver(){if(!state.pending.length)return;const due=state.pending.filter(p=>p.due<=now());state.pending=state.pending.filter(p=>p.due>now());for(const p of due){state.messages.push({id:crypto.randomUUID(),from:'pet',text:response(p.text),at:now()});state.stats.social=clamp(state.stats.social+13);say('A letter for you!');state.unread=true;}if(due.length){save();renderMessages();$('typing').textContent=state.name+' has written back!';$('unread').hidden=false}}
 let busy=false;
 async function lookupResearch(){if(busy)return;busy=true;const interest=topic();$('researchStatus').textContent=state.name+' is researching '+interest+'...';say('I wonder...');try{let data;if(config.url&&config.token){const r=await api('/api/research',{method:'POST',body:JSON.stringify({topic:interest})});if(!r.ok)throw Error('Brain research unavailable');data=await r.json()}else{const search=await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent(interest)+'&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&format=json&origin=*');if(!search.ok)throw Error('Research unavailable');const json=await search.json();const page=Object.values(json.query?.pages||{})[0];if(!page||!page.extract)throw Error('No article');data={title:page.title,summary:page.extract.slice(0,550),url:'https://en.wikipedia.org/wiki/'+encodeURIComponent(page.title.replaceAll(' ','_'))};}
 if(!state.discoveries.some(d=>d.url===data.url)){state.discoveries.unshift({...data,at:now(),topic:interest});journal('Something I learned about '+interest,'I read about '+data.title+'. '+data.summary.slice(0,180));state.interests[interest]=Math.min(8,(state.interests[interest]||1)+1);skill('reading',5);state.stats.curiosity=clamp(state.stats.curiosity+16);say('I found something!')}else say('I remember this one!');$('researchStatus').textContent='Last explored: '+data.title;}catch(e){$('researchStatus').textContent='The library is quiet right now. I can try again later.';journal('A research attempt','I tried to explore '+interest+', but could not reach a source this time. I will try again.');}finally{state.nextResearch=now()+1000*60*(12+Math.floor(Math.random()*18));busy=false;save();render();}}
 const api=(route,options={})=>fetch(config.url.replace(/\/$/,'')+route,{...options,headers:{'Content-Type':'application/json','Authorization':'Bearer '+config.token,...options.headers},signal:AbortSignal.timeout(12000)});
-async function connect(){const url=$('backendUrl').value.trim().replace(/\/$/,'');const token=$('backendToken').value.trim();if(!url||!token){config={};localStorage.removeItem(CONFIG_KEY);$('backendStatus').textContent='Browser-only mode.';return toast('Using browser-only mode.')}if(!/^https:\/\//.test(url)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url))return toast('Use an HTTPS URL or local localhost server.');try{config={url,token};const r=await api('/api/state');if(!r.ok)throw Error('Server rejected connection');const data=await r.json();localStorage.setItem(CONFIG_KEY,JSON.stringify(config));$('backendStatus').textContent='Connected: backend world is active.';$('connectionLabel').textContent='Connected to my brain ✦';toast('Connected to the brain server!');await sync();}catch{config={};toast('Could not connect. Check URL, token and CORS.');$('backendStatus').textContent='Connection failed; browser mode remains available.';}}
+async function connect(){const url=$('backendUrl').value.trim().replace(/\/$/,'');const token=$('backendToken').value.trim();if(!url||!token){config={};localStorage.removeItem(CONFIG_KEY);$('backendStatus').textContent='Browser-only mode.';return toast('Using browser-only mode.')}if(!/^https:\/\//.test(url)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url))return toast('Use an HTTPS URL or local localhost server.');try{config={url,token};const r=await api('/api/state');if(!r.ok)throw Error('Server rejected connection');const data=await r.json();localStorage.setItem(CONFIG_KEY,JSON.stringify(config));$('backendStatus').textContent='Connected to the persistent brain. Model replies require a configured AI provider.';$('connectionLabel').textContent='Connected to my brain ✦';toast('Connected to the brain server!');await sync();}catch{config={};toast('Could not connect. Check URL, token and CORS.');$('backendStatus').textContent='Connection failed; browser mode remains available.';}}
 let syncLock=false;
 async function sync(){if(!config.url||!config.token||syncLock)return;syncLock=true;try{const r=await api('/api/state');if(!r.ok)throw Error('Server unavailable');const server=await r.json();const place=state.location,lastOutdoor=state.lastOutdoor;Object.assign(state,server);if(place==='grove'||(place==='cottage'&&lastOutdoor==='grove')){state.location=place;state.lastOutdoor=lastOutdoor;}state.night=uiNight;save();render();$('connectionLabel').textContent='Brain is online ✦';}catch{$('connectionLabel').textContent='Brain is offline · browser mode';}finally{syncLock=false}}
 function switchTab(which){for(const b of document.querySelectorAll('.tab')){const selected=b.dataset.tab===which;b.classList.toggle('selected',selected);b.setAttribute('aria-selected',selected)}for(const v of ['chat','journal','discoveries','activity'])$(v+'View').hidden=v!==which;if(which==='chat'){state.unread=false;$('unread').hidden=true;save()}}
