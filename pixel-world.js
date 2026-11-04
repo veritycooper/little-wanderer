@@ -569,7 +569,7 @@
     r(198,88,7,6,p.leaf2);r(206,86,6,7,p.flower2);
     r(238,92,52,5,p.woodLight);
     miniBooks(p,244,92,6);
-    plantPot(p,275,80,true);
+    plantPot(p,275,84,true);
     hearth(p,t);
     // Low bed fitted to Pip (roughly 2x her width).
     r(38,169,72,30,p.wood);
@@ -678,9 +678,9 @@
     for(const y of [74,107]){
       r(145,y,96,5,p.woodLight);
     }
-    for(const [x,y,c] of [[150,55,p.flower],[171,53,p.flower3],
-      [197,56,p.flower2],[218,52,p.leaf2],
-      [152,89,p.flower3],[181,88,p.flower],[213,89,p.flower2]]){
+    for(const [x,y,c] of [[150,60,p.flower],[171,60,p.flower3],
+      [197,60,p.flower2],[218,60,p.leaf2],
+      [152,93,p.flower3],[181,93,p.flower],[213,93,p.flower2]]){
       r(x,y,10,14,p.wall);
       r(x+2,y-3,6,4,p.woodLight);
       r(x+2,y+5,6,5,c);
