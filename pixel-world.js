@@ -577,7 +577,7 @@
     const nx=Number.isFinite(Number(x))?Number(x):57;
     const ny=Number.isFinite(Number(y))?Number(y):64;
     const px=36+(Math.max(10,Math.min(150,nx))-10)*4;
-    const py=126+Math.max(50,Math.min(79,ny))*.93;
+    const py=132+(Math.max(50,Math.min(79,ny))-50)*3.3;
     if(state.location==='grove'){
       // Keep the stroll on the safe bank or the far-side footpath.
       return {x:Math.max(45,Math.min(625,px)),
