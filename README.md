@@ -81,3 +81,11 @@ Multiple map areas, gardening and collection inventory, richer scheduled activit
 The meadow is drawn on a 400×250 HTML canvas with nearest-neighbour pixel scaling. The cottage, path, flowers, trees, water and Pip are rendered together rather than relying on emoji or mismatched graphics. Click the cottage to go indoors; choose Outside to leave. Click Pip to play. The moon/sun switch toggles the entire interface and world between dusty-rose daylight and plum night mode, remembering your choice on that device.
 
 Pip walks gradually between destinations and takes gentle idle strolls between major decisions. The interface respects reduced-motion preferences. Browser-mode activity happens while the page runs; the optional backend remains required for independent activity when the browser is closed.
+
+## Natural-colour worlds and enchanted companion
+
+The interface continues to use its dusty-rose and plum colours, while the game itself has its own natural palette (blue sky, green grass, natural wooden cottage, bright water, warm indoor lighting). The toggle changes the interface to plum and also gives the natural-colour world a darker night atmosphere. Text-heavy sections now use a conventional, higher-contrast sans-serif font rather than the pixel display font.
+
+Use **Meadow** and **Woodland** above the scene to explore two areas. The woodland has a winding creek, log bridge, mushroom patches, trees and a small magical stone circle. The redrawn cottage has a curtained window, reading shelf, bed, woven rug and fireplace. Pip is now a subtle fae creature with delicate antlers, luminous turquoise eyes and a glowing tail. The environment transitions are deliberately slow.
+
+Existing saved letters, interests, journal and memories keep the original `little-wanderer-v1` storage key. Your last outdoor area is remembered in browser mode; for the optional backend, the scenery selector is a local viewing preference while the autonomous agent continues its backend routines.
