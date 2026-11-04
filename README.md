@@ -9,11 +9,13 @@ A small, evolving virtual companion with a cosy cottage, its own routines, memor
 - An original dusty-rose pixel-art world with a cottage, pond, garden, stepping-stone path, moving clouds, stars, and a furnished cottage interior. Pip walks, idles, and can be clicked to play.
 - Autonomous needs (hunger, energy, social, joy, curiosity), interests, routines, decisions, and activities, with relaxed pacing (about 55–105 seconds between main activities).
 - A gentle conversation inbox: your pet doesn't answer instantly; its messages arrive after a realistic delay.
-- A journal that records actual world events, plus discoveries with **real Wikipedia source links**.\n- An activity trail showing reasons for decisions and a visible next-step intention.\n- A manually managed memory shelf: you can add or delete memories; ordinary letters are not automatically saved as permanent personal memories.
+- A journal that records actual world events, plus discoveries with **real Wikipedia source links**.
+- An activity trail showing reasons for decisions and a visible next-step intention.
+- A manually managed memory shelf: you can add or delete memories; ordinary letters are not automatically saved as permanent personal memories.
 - Meaningful progress in exploration, conversation, reading, and gardening; these counters are *not* presented as machine-learning model training.
 - Browser-only mode (saves to `localStorage`, no account or API key required), with persistent dusty-plum dark mode.
 - Optional Python FastAPI + SQLite backend with an always-running activity loop, private state and durable memories.
-- Optional language-model conversations through OpenAI's Responses API or a locally running Ollama model.
+- Context-rich language-model conversations through OpenAI's Responses API or a locally running Ollama model; local scripted letters remain available without a model.
 - Export/import of browser-mode saves, pet renaming, and adjustable care needs.
 
 ## Get it on GitHub Pages
@@ -65,12 +67,21 @@ index.html                  Accessible interface
 style.css                   Dusty rose and dark mode design
 pixel-world.js              Pixel-art environment, indoor cottage, walking animation
 app.js                      Browser simulation, chat, saved world, research
-backend/main.py             FastAPI, SQLite, autonomous scheduler, optional LLM
+backend/main.py             FastAPI, SQLite and autonomous scheduler
+backend/brain.py            Personality, context and model providers
+backend/tests/             Local and API regression tests
+backend/DEPLOY.md           Tested setup and deployment instructions
+render.yaml                 Optional persistent HTTPS Render deployment template
 backend/requirements.txt    Python packages
 backend/.env.example        Configuration template (never put real secrets here)
 backend/Dockerfile          Container deployment option
 .gitignore                  Ignore local data/secrets
 ```
+
+
+## Connect the private AI brain
+
+The site itself is hosted by GitHub Pages, but Python models and SQLite require an independent service. A complete Python brain, tests and a ready-to-review Render Blueprint are now in this repo. Follow [the brain setup guide](backend/DEPLOY.md) for local testing, costs, privacy, hosting and connecting the website. **The AI service is not running until you explicitly deploy it.** Keep your API keys on the server, never in this public repo or the browser.
 
 ## Next possible additions
 
