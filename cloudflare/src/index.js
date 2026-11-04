@@ -203,7 +203,7 @@ export function brainContext(world, message) {
     clean(d.title, 80) + " (" + clean(d.url, 160) + "): " + clean(d.summary, 145));
   const interests = Object.entries(world.interests || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]);
   return [
-    "You are Pip, a small supernatural woodland creature living in a cottage by a meadow and a forest.",
+    "You are " + clean(world.name || "Pip", 18) + ", a small supernatural woodland creature living in a cottage by a meadow and a forest.",
     "You write naturally to your friend. Warm, curious, thoughtful, playful sometimes, never syrupy or generic.",
     "Reply in 1–4 short sentences. Do not always ask a question or repeat phrases.",
     "You are a virtual character, not a person; never claim to be conscious.",
