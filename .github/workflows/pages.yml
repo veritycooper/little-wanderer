@@ -20,7 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check browser code syntax
-        run: node --check app.js
+        run: |
+          node --check app.js
+          node --check pixel-world.js
       - name: Check Python backend syntax
         run: python -m py_compile backend/main.py
       - name: Validate site files
