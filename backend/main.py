@@ -24,6 +24,8 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from brain import generate_reply, model_mode
+
 try:
     from dotenv import load_dotenv
     load_dotenv(Path(__file__).parent / ".env")
@@ -38,7 +40,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 DATABASE = DATA_DIR / "wanderer.sqlite3"
 ORIGINS = [x.strip() for x in os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000,https://veritycooper.github.io").split(",") if x.strip()]
 app = FastAPI(title="Little Wanderer Brain", version="0.1")
-app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
+app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_credentials=False, allow_methods=["GET", "POST", "DELETE"], allow_headers=["Authorization", "Content-Type"])
 LOCK = threading.RLock()
 TOPICS = ["wildflowers", "the moon", "butterflies", "forests", "mushrooms", "stars", "birds", "oceans", "bees", "clouds", "foxes", "seashells"]
 ACTIVITIES = ["wandering through the meadow", "tending the garden", "watching the pond", "reading in the cottage", "looking at the clouds", "exploring near the trees"]
@@ -187,52 +189,6 @@ def remember(world, letter):
     return
 
 
-def fallback_reply(world, message):
-    text = message.lower()
-    if any(t in text for t in ["hello", "hi ", "hey"]):
-        return "Hello! I was " + world["activity"].lower() + ". I'm glad you wrote to me."
-    if "how are" in text or "your day" in text:
-        return "I've been " + world["activity"].lower() + ". My little world is changing slowly, and I like that. How is your day going?"
-    if "learn" in text or "research" in text:
-        return "I've been curious about " + choose_topic(world) + ". My reading journal might have something new soon!"
-    return random.choice(["I had to sit and think about your letter for a while. What was the nicest part of your day?", "Thank you for writing! Today I was thinking about " + choose_topic(world) + ".", "I like that you tell me things. I wonder what we might discover together tomorrow."])
-
-
-def generated_reply(world, message):
-    prompt = ("You are " + world["name"] + ", a small, warm, independently curious cottage-dwelling virtual pet. "
-              "Speak in first person in 1-4 sentences, with a gentle but not saccharine voice. "
-              "You may describe things actually recorded in your state but must not invent research, external actions, "
-              "memories, or lived experiences. Do not claim sentience. Don't always ask questions. "
-              "Your current activity is: " + world["activity"] + ". "
-              "Your interests include " + ", ".join(sorted(world["interests"], key=world["interests"].get, reverse=True)[:5]) + ". "
-              "Remembered details: " + "; ".join(world["memories"][-8:]) + ". "
-              "Recent discoveries: " + "; ".join(d["title"] for d in world["discoveries"][:4]) + ".")
-    url, body, headers = None, None, {"Content-Type": "application/json"}
-    if os.getenv("OLLAMA_URL") and os.getenv("OLLAMA_MODEL"):
-        base = os.environ["OLLAMA_URL"].rstrip("/")
-        if not (base.startswith("http://127.0.0.1:") or base.startswith("http://localhost:")):
-            raise ValueError("For security, OLLAMA_URL must use localhost.")
-        url = base + "/api/generate"
-        body = {"model": os.environ["OLLAMA_MODEL"], "system": prompt, "prompt": message[:500], "stream": False}
-    elif os.getenv("OPENAI_API_KEY"):
-        url = "https://api.openai.com/v1/responses"
-        headers["Authorization"] = "Bearer " + os.environ["OPENAI_API_KEY"]
-        body = {"model": os.getenv("OPENAI_MODEL", "gpt-4.1-mini"), "instructions": prompt, "input": message[:500], "max_output_tokens": 180}
-    if not url:
-        return fallback_reply(world, message)
-    request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers, method="POST")
-    try:
-        with urllib.request.urlopen(request, timeout=35) as response:
-            result = json.load(response)
-        if "response" in result:  # Ollama
-            answer = result["response"]
-        else:
-            answer = " ".join(part.get("text", "") for item in result.get("output", []) for part in item.get("content", []) if part.get("type") == "output_text")
-        return answer.strip()[:1000] or fallback_reply(world, message)
-    except (urllib.error.URLError, ValueError, KeyError, TimeoutError):
-        return fallback_reply(world, message)
-
-
 def tick():
     # Snapshot and update under lock. External calls run outside the lock.
     due, research_topic = [], None
@@ -248,7 +204,7 @@ def tick():
             world["nextResearch"] = stamp() + random.randrange(16, 35) * 60_000
         write_state(world)
     for p in due:
-        answer = generated_reply(world, p["text"])
+        answer = generate_reply(world, p["text"])
         with LOCK:
             world = read_state()
             world["messages"].append({"id": str(uuid.uuid4()), "from": "pet", "text": answer, "at": stamp()})
@@ -309,7 +265,7 @@ class Research(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "mode": "ollama" if os.getenv("OLLAMA_MODEL") else "openai" if os.getenv("OPENAI_API_KEY") else "fallback"}
+    return {"status": "ok", "mode": model_mode()}
 
 
 @app.get("/api/state")
@@ -317,6 +273,9 @@ def get_state(authorization: str | None = Header(default=None)):
     require_token(authorization)
     with LOCK:
         state = read_state()
+        # Frontend only needs to know how many letters are awaiting replies.
+        # Do not re-expose raw pending letter bodies in a general state poll.
+        state["pending"] = [{"id": p["id"], "due": p["due"]} for p in state["pending"]]
         return state
 
 
@@ -330,7 +289,11 @@ def message(payload: Letter, authorization: str | None = Header(default=None)):
         world = read_state()
         world["messages"].append({"id": str(uuid.uuid4()), "from": "you", "text": content, "at": stamp()})
         world["messages"] = world["messages"][-100:]
-        world["pending"].append({"id": str(uuid.uuid4()), "text": content, "due": stamp() + random.randrange(35_000, 105_000)})
+        # Longer notes and sleepy moments take more thought.
+        delay = random.randrange(35_000, 90_000) + min(len(content) * 120, 27_000)
+        if world["stats"]["energy"] < 30 or world["location"] == "cottage":
+            delay += 20_000
+        world["pending"].append({"id": str(uuid.uuid4()), "text": content, "due": stamp() + delay})
         world["stats"]["social"] = clamp(world["stats"]["social"] + 8)
         world["skills"]["friendship"] = min(100, world["skills"]["friendship"] + 2)
         note(world, "A letter arrived", "You wrote to me today. I want to think before I reply.")
