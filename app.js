@@ -94,7 +94,11 @@ function render(){renderResearchPermission();updateStats();renderMemories();rend
 const move=()=>{const oldX=Number(state.x)||57,oldY=Number(state.y)||64;state.x=Math.max(10,Math.min(79,oldX+(Math.random()-.5)*30));state.y=Math.max(53,Math.min(76,oldY+(Math.random()-.5)*17))};
 function act(force){const s=state.stats;let action=force||'wander';if(!force){if(s.energy<24)action='rest';else if(s.hunger<25)action='feed';else if(s.social<30)action='reflect';else if(s.curiosity<35)action='read';else action=rand(['wander','wander','garden','explore','reflect','read','rest']);}
 const notes={wander:['Walking through the meadow','The air smells like wildflowers','A little stroll clears my head'],garden:['Checking the little seedlings','I think the garden looks happier today'],explore:['Investigating something shiny','I saw a curious little bug'],reflect:['Thinking about my day','I wonder what you are doing'],read:['Reading under a tree','Learning something new'],rest:['A well-earned little nap','Resting in my cottage'],feed:['Having something tasty','A snack sounds lovely'],play:['Chasing a fluttering leaf','Playing in the grass']};
-const reasons={rest:'I was running low on energy, so a little rest seemed sensible.',feed:'My tummy was getting empty, and I wanted a snack.',reflect:'I wanted to think about my day and our letters.',read:'I felt curious and wanted a quiet moment with a book.',garden:'The flowers might need tending, and gardening makes me happy.',explore:'I felt curious about the meadow around me.',wander:'A bit of wandering sounded fun.',play:'I wanted to have some fun.'};state.decisions=state.decisions||[];state.decisions.unshift({at:now(),action:action[0].toUpperCase()+action.slice(1),reason:reasons[action]||'It felt like a good idea.'});state.decisions=state.decisions.slice(0,100);state.plan={action:'Explore my interests',reason:'I will choose again after checking my needs.'};state.activity=rand(notes[action]||notes.wander);state.location=action==='rest'||action==='read'?'cottage':(state.lastOutdoor==='grove'?'grove':'meadow');if(state.location==='cottage'){state.lastOutdoor=state.lastOutdoor||'meadow';}else{state.location=state.lastOutdoor==='grove'?'grove':'meadow';move();}
+const reasons={rest:'I was running low on energy, so a little rest seemed sensible.',feed:'My tummy was getting empty, and I wanted a snack.',reflect:'I wanted to think about my day and our letters.',read:'I felt curious and wanted a quiet moment with a book.',garden:'The flowers might need tending, and gardening makes me happy.',explore:'I felt curious about the meadow around me.',wander:'A bit of wandering sounded fun.',play:'I wanted to have some fun.'};state.decisions=state.decisions||[];state.decisions.unshift({at:now(),action:action[0].toUpperCase()+action.slice(1),reason:reasons[action]||'It felt like a good idea.'});state.decisions=state.decisions.slice(0,100);state.plan={action:'Explore my interests',reason:'I will choose again after checking my needs.'};state.activity=rand(notes[action]||notes.wander);state.location=['rest','read','feed'].includes(action)?'cottage':(state.lastOutdoor==='grove'?'grove':'meadow');
+if(state.location==='cottage'){
+  state.room=action==='feed'?'kitchen':action==='read'?'study':'living';
+  state.lastOutdoor=state.lastOutdoor||'meadow';
+}else{state.location=state.lastOutdoor==='grove'?'grove':'meadow';move();}
 if(action==='feed')s.hunger=clamp(s.hunger+36);if(action==='rest')s.energy=clamp(s.energy+33);
 if(action==='wander'||action==='explore'){s.joy=clamp(s.joy+5);s.curiosity=clamp(s.curiosity-3);skill('exploring',2)}
 if(action==='garden'){s.joy=clamp(s.joy+8);skill('gardening',3)}
@@ -167,6 +171,11 @@ const LOCAL_QUESTIONS={
  "the moon":["What makes the Moon change shape?","lunar phase","Sometimes I see it even when the sky is blue."],
  forests:["How are trees connected underground?","mycorrhizal network","I wonder what is happening beneath the roots."],
  stars:["Why do stars seem to twinkle?","scintillation astronomy","I like sitting outside and looking up."],
+ bees:["How do bees tell one another where flowers are?","waggle dance","I wonder whether the bees are sharing directions."],
+ clouds:["What makes clouds form different shapes?","cloud","They look different every time I visit the meadow."],
+ foxes:["How can foxes hear little animals under the grass?","red fox","The forest sounds different to every creature."],
+ oceans:["Why do some animals deep underwater glow?","bioluminescence","Imagine finding your way by a little light in the dark."],
+ seashells:["How do sea snails make and grow their shells?","seashell","A portable little house sounds wonderful."],
  birds:["How do birds find their way home after migrating?","bird migration","There must be so many journeys above my cottage."]
 };
 function localCuriosity(){
