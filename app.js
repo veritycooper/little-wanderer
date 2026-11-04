@@ -72,6 +72,7 @@ $('memoryForm').addEventListener('submit',async e=>{e.preventDefault();const inp
 document.querySelectorAll('[data-care]').forEach(b=>b.addEventListener('click',async()=>{const action=b.dataset.care;if(action==='talk'){switchTab('chat');$('message').focus();return}if(config.url&&config.token){try{const r=await api('/api/care',{method:'POST',body:JSON.stringify({action})});if(r.ok){await sync();return}}catch{}}act(action==='rest'?'rest':action==='feed'?'feed':'play');say(action==='feed'?'Yum, thank you!':action==='rest'?'Time for a nap!':'Hehe!');save();render()}));
 $('chatForm').addEventListener('submit',async e=>{e.preventDefault();if(config.url&&config.token){const value=$('message').value.trim();if(!value)return;try{const r=await api('/api/message',{method:'POST',body:JSON.stringify({text:value})});if(!r.ok)throw Error();$('message').value='';await sync();return}catch{return toast('The brain is offline. Reconnect or switch to browser mode.')}}sendMessage()});
 $('research').addEventListener('click',lookupResearch);
+$('petInteract').addEventListener('click',()=>document.querySelector('[data-care="play"]').click());
 $('cottage').addEventListener('click',()=>{state.location='cottage';state.activity='Hanging out at home';renderWorld();save()});
 $('visitButton').addEventListener('click',()=>{state.location=state.location==='cottage'?'meadow':'cottage';renderWorld();save()});
 $('outside').addEventListener('click',()=>{state.location='meadow';renderWorld();save()});
