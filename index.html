@@ -32,9 +32,15 @@
           <div><p class="eyebrow">01 / THE LITTLE WORLD</p><h2 id="worldHeading">Rosewood Meadow <span class="title-symbol" aria-hidden="true">✦</span></h2></div>
           <span class="tag" id="location">Wandering outside</span>
         </div>
+        <div class="scene-nav" aria-label="Explore the world">
+          <span class="scene-nav-label">EXPLORE</span>
+          <button type="button" class="scene-choice selected" data-scene="meadow" aria-pressed="true">Meadow</button>
+          <button type="button" class="scene-choice" data-scene="grove" aria-pressed="false">Woodland</button>
+          <span class="scene-hint">Two little places to explore</span>
+        </div>
         <div class="world-frame">
           <div id="world" class="world">
-            <canvas id="worldCanvas" width="400" height="250" role="img" aria-label="Pixel art meadow with a cottage, trees, stepping-stone path, flowers, pond and a wandering little companion."></canvas>
+            <canvas id="worldCanvas" width="400" height="250" role="img" aria-label="Pixel-art virtual world with a natural-coloured meadow, woodland, cosy cottage and a wandering magical companion."></canvas>
             <button id="cottage" class="cottage-hitbox" type="button" aria-label="Go into the cottage" title="Visit the cottage"><span class="sr-only">Go into the cottage</span></button>
             <div id="room" hidden></div>
             <button id="outside" type="button" class="outside" hidden>← Outside</button>
@@ -44,8 +50,8 @@
             <div class="world-corner" aria-hidden="true">A LITTLE PLACE TO BE</div>
           </div>
         </div>
-        <div class="panel-foot"><span id="worldNote">A breeze brushes through the rose-coloured grass.</span><button id="visitButton" type="button" class="link-button">Visit the cottage <span aria-hidden="true">↗</span></button></div>
-        <div class="world-guide"><span><i class="guide-square"></i> Watch Pip explore</span><span><i class="guide-square guide-two"></i> Click the cottage to visit</span><span><i class="guide-square guide-three"></i> Day or night, your choice</span></div>
+        <div class="panel-foot"><span id="worldNote">Sunshine drifts over the meadow.</span><button id="visitButton" type="button" class="link-button">Visit the cottage <span aria-hidden="true">↗</span></button></div>
+        <div class="world-guide"><span><i class="guide-square"></i> Watch Pip explore</span><span><i class="guide-square guide-two"></i> Click the cottage to visit</span><span><i class="guide-square guide-three"></i> Two places, day and night</span></div>
       </section>
       <aside class="panel needs" aria-labelledby="petTitle">
         <div class="pet-header"><div class="avatar" aria-hidden="true"><span class="mini-pet"><i></i><b></b><em></em></span></div><div><p class="eyebrow">YOUR LITTLE COMPANION</p><h2 id="petTitle">Pip <span>♡</span></h2><p id="mood">Feeling rather content</p></div><span class="tiny-heart" aria-hidden="true">✦</span></div>
