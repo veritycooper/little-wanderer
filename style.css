@@ -224,3 +224,63 @@ body.dark .scene-choice:hover:not(.selected){background:var(--rose-pale)}
  .intro,.msg,.journal-entry p,.discovery p{font-size:13px}
  .world-hud{font-size:10px}
 }
+
+
+/* Bounded notebook panes: content scrolls inside, not endlessly down the page.
+   Keep headings in place and let chat compose controls remain visible. */
+.letters{
+  display:flex;
+  flex-direction:column;
+  height:clamp(450px,76vh,750px);
+  min-height:0;
+  overflow:hidden;
+}
+.letters .tabs{flex:0 0 auto}
+.letters .view{
+  display:flex;
+  flex-direction:column;
+  flex:1 1 auto;
+  height:auto;
+  min-height:0;
+  overflow:hidden;
+}
+.letters .view[hidden]{display:none!important}
+.letters .view-title{flex:0 0 auto}
+#chatForm,.letters .typing{flex-shrink:0}
+.messages,#journal,#discoveries,#decisions{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:var(--line-strong) transparent;
+  padding-right:10px;
+}
+#journal,#discoveries,#decisions{
+  margin-top:9px;
+  padding-bottom:10px;
+}
+.messages::-webkit-scrollbar,
+#journal::-webkit-scrollbar,
+#discoveries::-webkit-scrollbar,
+#decisions::-webkit-scrollbar{width:9px}
+.messages::-webkit-scrollbar-thumb,
+#journal::-webkit-scrollbar-thumb,
+#discoveries::-webkit-scrollbar-thumb,
+#decisions::-webkit-scrollbar-thumb{
+  background:var(--line-strong);
+  border-radius:6px;
+  border:2px solid var(--paper);
+}
+.messages::-webkit-scrollbar-track,
+#journal::-webkit-scrollbar-track,
+#discoveries::-webkit-scrollbar-track,
+#decisions::-webkit-scrollbar-track{background:transparent}
+@media(max-width:620px){
+  .letters{height:min(73vh,650px);min-height:400px}
+  .letters .view{padding:18px 14px}
+  .letters .view-title h3{font-size:19px}
+  .letters .view-title p:not(.eyebrow){font-size:11px}
+  .messages,#journal,#discoveries,#decisions{padding-right:7px}
+}
