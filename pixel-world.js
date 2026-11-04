@@ -452,13 +452,17 @@
     }
   }
   function hearth(p,t){
-    // Stone fireplace on the right with a gentle flicker at night.
-    r(300,107,78,90,p.dark);r(305,112,68,84,p.stone);r(311,141,55,54,p.dark);
-    r(299,107,80,10,p.stoneLight);r(302,115,74,5,p.stone);
-    r(312,177,56,18,p.ground);r(318,180,44,6,p.wood);
-    const flame=Math.sin(t*.006);
-    r(327,165,25,22,'#b75c38');r(332,158+flame*2,15,23,'#e69b46');r(336,165+flame*2,8,14,'#ffe2a1');
-    if(p.night){ctx.globalAlpha=.14;oval(338,169,64,65,'#ffe1a4');ctx.globalAlpha=1}
+    // Flush, built-in hearth resting against the back wall and skirting.
+    r(324,78,66,85,p.dark);r(330,82,54,79,p.stone);
+    for(const [x,y] of [[334,90],[355,90],[374,90],[345,109],[365,109],[335,125],[358,125]])
+      r(x,y,11,3,p.stoneLight);
+    r(322,77,70,8,p.furnitureLight);r(337,121,39,40,p.dark);
+    r(342,126,29,34,'#433a37');
+    r(344,155,25,4,p.wood);
+    const flicker=motion.matches?0:Math.sin(t*.006)*2;
+    r(350,143,15,12,'#b75c38');r(353,136+flicker,11,17,'#e69b46');
+    r(356,142+flicker,6,10,'#ffe2a1');r(323,160,68,4,p.floorLight);
+    if(p.night){ctx.globalAlpha=.09;oval(357,144,30,26,p.glow);ctx.globalAlpha=1}
   }
   function bookshelf(p){
     r(174,41,91,117,p.dark);r(179,46,81,108,p.wood);
@@ -511,91 +515,132 @@
     // Potted fern
     r(155,129,19,20,p.wood);r(158,125,13,7,p.trunkLight);
     for(const dx of [-16,-8,0,9,17]){r(164+dx,119-Math.abs(dx)*.5,4,14,p.leaf);r(162+dx,111-Math.abs(dx)*.4,8,6,p.leaf2)}
-    // Pip's research and letter-writing desk: a real computer, not just a book prop.
-    r(181,168,104,12,p.furniture);
-    r(186,176,8,35,p.wood);r(268,176,8,35,p.wood);
-    r(184,164,99,6,p.furnitureLight);
-    r(205,113,54,45,p.dark);
-    r(209,117,46,36,p.woodLight);
-    r(212,120,40,31,p.night?'#426875':'#a8d8d9');
-    r(217,125,21,3,p.glow);r(217,132,30,3,p.leaf2);
-    r(217,139,16,3,p.woodLight);
-    r(228,158,7,8,p.furniture);r(220,165,24,4,p.furnitureLight);
-    // Keyboard and a little lamp.
-    r(210,170,44,7,p.dark);r(214,171,36,3,p.wall);
-    r(191,133,4,34,p.furniture);r(184,129,19,7,p.glow);
-    r(189,126,9,4,p.wall);
-    r(270,145,8,21,p.wood);r(267,139,14,8,p.woodLight);
-    r(267,135,4,5,p.flower3);
-    if(state.activity&&/read|research|letter|computer|writing/i.test(state.activity)){
-      r(215,125,7,3,p.glow);
-      if(Math.sin(t*.002)>0)r(241,137,3,3,p.glow);
+    // The main room is now a living/bedroom, not the office.
+    r(193,157,76,51,p.furniture);r(199,161,64,39,'#b9988b');
+    r(204,167,54,23,'#d6b9ad');
+    r(195,192,9,20,p.wood);r(261,192,9,20,p.wood);
+    r(207,200,48,6,p.woodLight);
+    r(276,174,32,8,p.furnitureLight);
+    r(282,181,5,25,p.wood);r(301,181,5,25,p.wood);
+    r(289,164,10,9,p.wall);r(291,157,6,8,p.flower3);
+    // Three framed pressed flowers on the wall.
+    for(const [x,y,c] of [[186,70,p.leaf2],[230,80,p.flower3],[274,70,p.flower]]){
+      r(x,y,25,29,p.wood);r(x+3,y+3,19,23,p.wall);
+      r(x+12,y+10,2,14,p.leafDark);r(x+7,y+11,6,7,c);r(x+13,y+9,6,8,c);
     }
+
     // Floating dust motes
     if(p.night)for(let i=0;i<8;i++){const x=160+hash(i,55)*116,y=18+hash(i,56)*125;if(Math.sin(t*.002+i)>.1)r(x,y,2,2,p.glow)}
   }
-  function kitchen(p,t){
-    // A separate room with warm cabinets, working stove, sink and a real table.
-    r(0,0,400,250,p.indoorWall);
-    for(let x=0;x<400;x+=45)r(x,0,2,164,p.indoorWall2);
-    r(0,0,400,14,p.wood);r(0,151,400,13,p.wood);
+  function study(p,t){
+    // Dedicated office: its own window, shelving, computer and writing desk.
+    r(0,0,400,250,p.indoorWall2);
+    for(let x=24;x<400;x+=48)r(x,0,2,163,p.indoorWall);
+    r(0,0,400,14,p.wood);r(0,151,400,13,p.woodLight);
     r(0,164,400,86,p.floor);
-    for(let x=0;x<400;x+=36){r(x+2,166,2,84,p.furniture);r(x+8,180,26,2,p.floorLight)}
-    for(let y=186;y<250;y+=22)r(0,y,400,2,p.furniture);
-    // Kitchen window with curtains and hills behind.
-    r(36,36,102,87,p.dark);r(40,40,94,78,p.woodLight);
-    r(44,44,86,70,p.night?'#405c79':'#91cddd');
-    polygon([[45,104],[78,77],[106,92],[129,78],[129,114],[45,114]],p.hillFar);
-    r(84,44,5,74,p.wood);r(45,81,84,5,p.wood);
-    r(37,35,10,85,p.leaf);r(129,35,10,85,p.leaf2);
-    r(33,121,110,7,p.furnitureLight);
-
-    // Upper cupboards, shelves, labelled jam jars.
-    for(const x of [160,218,276]){
-      r(x,34,52,57,p.furniture);
-      r(x+4,38,44,49,p.woodLight);
-      r(x+23,57,4,6,p.glow);
-      r(x+8,40,31,4,p.wallShadow);
+    for(let x=0;x<400;x+=40){r(x+2,166,2,84,p.furniture);r(x+8,175,25,2,p.floorLight)}
+    for(let y=187;y<250;y+=23)r(0,y,400,2,p.furniture);
+    r(25,34,108,101,p.furniture);r(31,40,96,90,p.woodLight);
+    r(36,45,86,79,p.night?'#425d7b':'#92ccde');
+    polygon([[36,113],[70,88],[99,105],[122,91],[122,124],[36,124]],p.hillFar);
+    if(!p.night)cloud(48,61,.48,p.cloud);
+    r(76,45,5,78,p.wood);r(36,84,86,5,p.wood);
+    r(25,36,11,91,p.leaf2);r(123,36,10,91,p.leaf);
+    r(24,130,112,8,p.furnitureLight);
+    // Window bench with cushion.
+    r(27,144,108,20,p.wood);r(32,139,98,12,'#c4a4ab');
+    for(const x of [284,335]){
+      r(x,27,44,123,p.furniture);r(x+4,32,36,113,p.wood);
+      for(const y of [63,102,141]){
+        r(x+3,y,38,5,p.furnitureLight);
+        for(let i=0;i<4;i++){
+          const h=12+i%3*4;
+          r(x+7+i*8,y-h,6,h,['#92a38d','#c99b91','#9aabb9','#d2ba8d'][i]);
+          r(x+9+i*8,y-h+3,1,Math.max(2,h-5),p.wall);
+        }
+      }
     }
-    r(154,100,199,8,p.furnitureLight);
-    for(const [x,c] of [[164,p.flower],[180,p.flower3],[198,p.leaf2],
-      [218,p.flower],[237,p.flower2],[253,p.flower3]]){
-      r(x,81,11,15,p.wall);r(x+2,78,7,4,p.wood);
-      r(x+2,86,7,6,c);r(x+3,86,3,2,p.glow);
+    // Real little computer at a quiet workbench.
+    r(146,131,133,12,p.furniture);r(151,140,10,66,p.wood);
+    r(263,140,10,66,p.wood);r(144,127,138,7,p.furnitureLight);
+    r(166,78,83,48,p.dark);r(171,82,73,39,p.woodLight);
+    r(176,87,63,31,p.night?'#365569':'#a3d9db');
+    r(182,93,39,3,p.glow);r(182,101,49,3,p.leaf3);
+    r(182,109,29,3,p.roofLight);
+    r(202,125,9,8,p.furniture);r(194,133,27,4,p.woodLight);
+    r(172,140,58,6,p.dark);r(177,140,48,3,p.wall);
+    r(238,136,31,9,p.wall);r(241,138,23,2,p.wallShadow);
+    r(148,96,5,30,p.furniture);r(143,90,22,8,p.woodLight);
+    r(148,86,9,7,p.glow);
+    if(!motion.matches&&Math.sin(t*.002)>0)r(210,100,4,3,p.glow);
+    r(199,161,48,11,'#b99194');r(204,175,5,28,p.wood);
+    r(239,175,5,28,p.wood);
+    r(142,213,136,25,'#b79e91');r(148,210,123,25,'#e9cfbc');
+    r(169,217,83,11,'#ca9a9e');
+    r(144,173,18,25,p.wood);r(147,165,12,10,p.trunkLight);
+    for(const dx of [-14,-7,0,9,16]){
+      r(152+dx,153-Math.abs(dx)*.3,5,13,p.leaf);
+      r(150+dx,149-Math.abs(dx)*.2,8,6,p.leaf3);
     }
-    // Counter units with a sink and little cooking hob.
-    r(152,128,222,48,p.furniture);
-    for(let x=160;x<=341;x+=47){
-      r(x,134,42,36,p.woodLight);r(x+35,146,3,7,p.furniture);
+  }
+  function kitchen(p,t){
+    // Asymmetric cottage breakfast nook, not a wall of fitted cabinets.
+    r(0,0,400,250,p.indoorWall2);
+    for(let x=15;x<400;x+=55)r(x,0,2,163,p.indoorWall);
+    r(0,0,400,14,p.wood);r(0,150,400,14,p.woodLight);
+    r(0,164,400,86,p.floor);
+    for(let x=0;x<400;x+=40){r(x+2,166,2,84,p.furniture);r(x+8,175,25,2,p.floorLight)}
+    for(let y=187;y<250;y+=23)r(0,y,400,2,p.furniture);
+    // Sunlit window with fresh herbs on its sill.
+    r(23,32,108,101,p.furniture);r(28,37,98,91,p.woodLight);
+    r(33,42,88,80,p.night?'#425c78':'#9acfdc');
+    polygon([[33,112],[60,89],[91,103],[121,85],[121,122],[33,122]],p.hillFar);
+    if(!p.night)cloud(45,62,.4,p.cloud);
+    r(74,42,5,80,p.wood);r(33,81,88,5,p.wood);
+    r(23,34,11,92,p.leaf2);r(121,34,10,92,p.leaf);
+    r(20,130,116,8,p.furnitureLight);
+    for(const x of [48,76,106]){
+      r(x,119,11,12,p.trunkLight);r(x+2,113,7,8,p.leaf2);
+      r(x+5,109,3,7,p.leaf3);
     }
-    r(145,120,233,13,p.furnitureLight);
-    r(166,121,65,6,p.stoneLight);
-    r(181,121,40,5,p.water);r(195,111,3,10,p.furniture);
-    r(195,110,17,3,p.furnitureLight);r(209,113,3,5,p.furnitureLight);
-    r(270,111,79,9,p.dark);
-    for(const x of [281,307,333]){r(x,113,13,5,p.wood);r(x+5,113,3,2,p.glow)}
-    r(287,99,37,12,p.wallShadow);r(293,91,25,12,p.furnitureLight);
-    // Hearth-oven with visible handle and knobs.
-    r(272,137,76,38,p.dark);r(278,143,64,27,p.stone);
-    r(289,147,43,17,p.window);r(285,136,52,3,p.woodLight);
-    for(const x of [284,312,335])r(x,131,4,4,p.wall);
-    // Small round table, bread and bowl of real berries.
-    oval(105,203,61,17,p.furniture);
-    oval(105,198,60,16,p.woodLight);
-    r(98,207,13,36,p.furniture);
-    oval(108,193,21,7,p.wall);
-    for(const [dx,dy,c] of [[-9,0,'#c4546f'],[0,-3,'#aa4961'],
-      [8,0,'#e98a91'],[-3,3,'#bd6279'],[12,3,'#a54762']]){
-      r(108+dx,191+dy,6,5,c);
+    // Open shelves, colourful jars and hanging herbs.
+    for(const y of [49,93]){
+      r(153,y,119,7,p.furniture);r(158,y-2,109,4,p.woodLight);
     }
-    r(62,191,22,6,p.path);r(67,185,12,7,p.woodLight);
-    // Dining chairs against table edge.
-    r(47,208,14,31,p.wood);r(42,199,23,8,p.woodLight);
-    r(154,206,14,31,p.wood);r(150,198,22,8,p.woodLight);
-    // Houseplant by the back wall.
-    r(368,143,22,22,p.wood);r(371,140,16,7,p.trunkLight);
-    for(const dx of [-16,-7,1,12,19])r(378+dx,129-Math.abs(dx)*.35,8,16,p.leaf2);
-    if(p.night)r(362,88,8,9,p.glow);
+    for(const [x,y,c] of [[164,23,p.flower],[188,26,p.flower3],
+      [215,23,p.flower2],[242,22,p.leaf2],[170,65,p.flower],
+      [201,67,p.flower3],[237,67,p.flower2]]){
+      r(x,y,13,21,p.wall);r(x+2,y-4,9,5,p.woodLight);
+      r(x+3,y+7,7,5,c);
+    }
+    for(const x of [170,208,246]){
+      r(x,106,2,16,p.trunk);r(x-4,117,10,7,p.leaf2);
+    }
+    // Compact worktop and inset cooker on the right.
+    r(290,77,98,87,p.wallShadow);r(296,82,86,77,p.indoorWall);
+    r(278,128,115,38,p.furniture);
+    r(282,132,107,30,p.woodLight);r(275,120,121,11,p.furnitureLight);
+    r(298,121,31,5,p.stoneLight);r(307,121,15,3,p.water);
+    r(311,113,3,9,p.furniture);r(311,112,14,3,p.woodLight);
+    r(354,121,27,6,p.dark);
+    r(351,136,37,30,p.dark);r(356,141,28,20,p.stone);
+    r(361,145,18,12,p.window);
+    r(279,65,3,35,p.wood);r(273,96,16,9,p.roof);
+    r(276,99,10,3,p.roofLight);
+    // Little table with a basket of berries, low stools and a woven rug.
+    oval(112,200,63,16,p.furniture);oval(112,195,61,15,p.woodLight);
+    r(107,204,12,38,p.wood);
+    r(94,189,34,8,p.wall);r(98,184,26,10,p.trunkLight);
+    for(const [dx,dy,c] of [[-11,0,'#c4546f'],[0,-4,'#aa4961'],
+      [9,0,'#e98a91'],[-3,3,'#bd6279'],[12,3,'#a54762']])
+      r(111+dx,187+dy,6,5,c);
+    r(34,193,24,11,p.woodLight);r(38,202,5,36,p.wood);
+    r(51,202,5,36,p.wood);r(171,195,24,12,p.woodLight);
+    r(175,205,5,34,p.wood);r(190,205,5,34,p.wood);
+    r(228,214,142,24,'#bc9e8c');r(236,210,124,25,'#e1c5ac');
+    r(253,217,91,11,'#c59898');
+    r(236,172,31,20,p.wood);r(240,165,23,12,p.trunkLight);
+    r(245,162,12,5,p.leaf3);
   }
   function creature(x,y,p,t,walk,home){
     const yy=Math.round(y+(walk?Math.sin(t*.008)*1.2:Math.sin(t*.0018)*.8));
@@ -630,7 +675,7 @@
     }
   }
   const isOutside=loc=>loc!=='cottage';
-  let state={location:'meadow',room:'study',night:false,x:57,y:64,unread:false};
+  let state={location:'meadow',room:'living',night:false,x:57,y:64,unread:false};
   let position={x:220,y:205},target={x:220,y:205};
   let route=[];
   let camera=0,mailPulse=0;
@@ -708,6 +753,7 @@
   function scene(p,loc,t){
     if(loc==='cottage'){
       if(state.room==='kitchen')kitchen(p,t);
+      else if(state.room==='study')study(p,t);
       else interior(p,t);
     }else if(loc==='grove')grove(p,t);
     else meadow(p,t);
@@ -720,7 +766,7 @@
     if(isOutside(state.location))ctx.translate(-Math.round(camera),0);
     scene(p,state.location,t);
     const home=!isOutside(state.location);
-    creature(home?(state.room==='kitchen'?141:240):position.x,
+    creature(home?(state.room==='kitchen'?141:state.room==='study'?242:180):position.x,
       home?(state.room==='kitchen'?206:207):position.y,p,t,walking,home);
     ctx.restore();
     moveHitboxes();
@@ -739,7 +785,7 @@
     const b=document.getElementById('petInteract');
     const bubble=document.getElementById('bubble');
     const home=!isOutside(state.location);
-    const x=home?(state.room==='kitchen'?141:240):position.x-camera;
+    const x=home?(state.room==='kitchen'?141:state.room==='study'?242:180):position.x-camera;
     const y=home?(state.room==='kitchen'?206:207):position.y;
     if(b){b.style.left=x/W*100+'%';b.style.top=(y-9)/H*100+'%'}
     if(bubble){
@@ -766,7 +812,7 @@
     const oldRoom=state.room;
     state={...state,...incoming};
     if(!['meadow','grove','cottage'].includes(state.location))state.location='meadow';
-    if(!['study','kitchen'].includes(state.room))state.room='study';
+    if(!['living','study','kitchen'].includes(state.room))state.room='living';
     const point=worldPoint(state.x,state.y);
     if(initial||!last){
       position={...point};target={...point};route=[];
