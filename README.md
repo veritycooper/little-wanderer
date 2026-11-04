@@ -6,12 +6,12 @@ A small, evolving virtual companion with a cosy cottage, its own routines, memor
 
 ## What is included
 
-- A hand-drawn, responsive little world with a cottage, pond, garden, day/night mode, and a pet that wanders or goes home.
-- Autonomous needs (hunger, energy, social, joy, curiosity), interests, routines, decisions, and activities.
+- An original dusty-rose pixel-art world with a cottage, pond, garden, stepping-stone path, moving clouds, stars, and a furnished cottage interior. Pip walks, idles, and can be clicked to play.
+- Autonomous needs (hunger, energy, social, joy, curiosity), interests, routines, decisions, and activities, with relaxed pacing (about 55–105 seconds between main activities).
 - A gentle conversation inbox: your pet doesn't answer instantly; its messages arrive after a realistic delay.
 - A journal that records actual world events, plus discoveries with **real Wikipedia source links**.\n- An activity trail showing reasons for decisions and a visible next-step intention.\n- A manually managed memory shelf: you can add or delete memories; ordinary letters are not automatically saved as permanent personal memories.
 - Meaningful progress in exploration, conversation, reading, and gardening; these counters are *not* presented as machine-learning model training.
-- Browser-only mode (saves to `localStorage`, no account or API key required).
+- Browser-only mode (saves to `localStorage`, no account or API key required), with persistent dusty-plum dark mode.
 - Optional Python FastAPI + SQLite backend with an always-running activity loop, private state and durable memories.
 - Optional language-model conversations through OpenAI's Responses API or a locally running Ollama model.
 - Export/import of browser-mode saves, pet renaming, and adjustable care needs.
@@ -61,8 +61,9 @@ This project has no analytics or accounts. Browser-mode data stays in that brows
 ## Project layout
 
 ```
-index.html                  Interface
-style.css                   Cottage garden design
+index.html                  Accessible interface
+style.css                   Dusty rose and dark mode design
+pixel-world.js              Pixel-art environment, indoor cottage, walking animation
 app.js                      Browser simulation, chat, saved world, research
 backend/main.py             FastAPI, SQLite, autonomous scheduler, optional LLM
 backend/requirements.txt    Python packages
@@ -74,3 +75,9 @@ backend/Dockerfile          Container deployment option
 ## Next possible additions
 
 Multiple map areas, gardening and collection inventory, richer scheduled activity, personality evolution, weather and seasons, explicit consent-based memory management, and a deployable persistent backend.
+
+## Exploring the pixel world
+
+The meadow is drawn on a 400×250 HTML canvas with nearest-neighbour pixel scaling. The cottage, path, flowers, trees, water and Pip are rendered together rather than relying on emoji or mismatched graphics. Click the cottage to go indoors; choose Outside to leave. Click Pip to play. The moon/sun switch toggles the entire interface and world between dusty-rose daylight and plum night mode, remembering your choice on that device.
+
+Pip walks gradually between destinations and takes gentle idle strolls between major decisions. The interface respects reduced-motion preferences. Browser-mode activity happens while the page runs; the optional backend remains required for independent activity when the browser is closed.
