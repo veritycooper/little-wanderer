@@ -451,197 +451,293 @@
       if(Math.sin(t*.002+j*2.3)>.12)r(x,y,2,2,p.glow);
     }
   }
-  function hearth(p,t){
-    // Flush, built-in hearth resting against the back wall and skirting.
-    r(324,78,66,85,p.dark);r(330,82,54,79,p.stone);
-    for(const [x,y] of [[334,90],[355,90],[374,90],[345,109],[365,109],[335,125],[358,125]])
-      r(x,y,11,3,p.stoneLight);
-    r(322,77,70,8,p.furnitureLight);r(337,121,39,40,p.dark);
-    r(342,126,29,34,'#433a37');
-    r(344,155,25,4,p.wood);
-    const flicker=motion.matches?0:Math.sin(t*.006)*2;
-    r(350,143,15,12,'#b75c38');r(353,136+flicker,11,17,'#e69b46');
-    r(356,142+flicker,6,10,'#ffe2a1');r(323,160,68,4,p.floorLight);
-    if(p.night){ctx.globalAlpha=.09;oval(357,144,30,26,p.glow);ctx.globalAlpha=1}
-  }
-  function bookshelf(p){
-    r(174,41,91,117,p.dark);r(179,46,81,108,p.wood);
-    for(const y of [76,112,145])r(178,y,83,6,p.woodLight);
-    for(let row=0;row<3;row++){
-      let x=185,y=54+row*35;
-      for(let i=0;i<9;i++){
-        const heights=[19,15,21,17,20,13,19,15,18];
-        const colors=['#7e9b84','#af786a','#ddbe92','#a68ab0','#6a8797'];
-        r(x,y+21-heights[i],6,heights[i],colors[(i+row)%5]);r(x+2,y+21-heights[i]+2,1,heights[i]-4,p.wall);
-        x+=8;
+  // The entire cottage shares the same 400 x 250 pixel scale.
+  // Pip is about 29px wide and 45px tall including her ears. All chairs,
+  // desks, tables and beds use that scale rather than room-sized furniture.
+  function roomShell(p){
+    const wall=p.night?'#b8a393':'#f3e5d0';
+    const panel=p.night?'#ae9788':'#f8ebd8';
+    const trim=p.night?'#87685c':'#b68f77';
+    const trimLight=p.night?'#b79b83':'#d6b396';
+    const floor=p.night?'#937869':'#d4b69b';
+    const floorLight=p.night?'#a18474':'#e3c9af';
+    const seam=p.night?'#7f665b':'#bf9e86';
+    r(0,0,400,250,wall);
+    r(0,0,400,8,trim);
+    r(0,8,400,3,trimLight);
+    for(let x=30;x<400;x+=72){
+      r(x,11,2,136,panel);
+      r(x+3,11,1,136,trimLight);
+    }
+    // Narrow, quiet baseboard with furniture sitting in front of it.
+    r(0,144,400,3,trimLight);
+    r(0,147,400,8,trim);
+    r(0,155,400,95,floor);
+    // Offset timber floorboards rather than an oversized tiled/grid floor.
+    for(let row=0;row<6;row++){
+      const y=158+row*17,shift=(row%3)*17;
+      r(0,y,400,1,seam);
+      for(let x=-60+shift;x<430;x+=59){
+        r(x,y+2,56,1,floorLight);
+        r(x+57,y+1,1,16,seam);
+        if((x+row*7)%4===0)r(x+19,y+9,8,1,trimLight);
       }
     }
+    r(0,249,400,1,trim);
+  }
+  function roomWindow(p,x,y,w=75,h=65){
+    const wood=p.night?'#795f57':'#a78169';
+    r(x-5,y-6,w+10,h+13,wood);
+    r(x-2,y-3,w+4,h+6,p.wall);
+    r(x+2,y+1,w-4,h-4,p.night?'#496678':'#a7d7df');
+    const cloudX=x+12,cloudY=y+18;
+    if(p.night){
+      r(x+w-24,y+12,10,10,p.glow);r(x+w-20,y+9,4,15,p.glow);
+    }else{
+      cloud(cloudX,cloudY,.35,p.cloud);
+    }
+    polygon([[x+2,y+h-13],[x+22,y+h-33],[x+44,y+h-17],
+      [x+w-2,y+h-29],[x+w-2,y+h-3],[x+2,y+h-3]],p.hillFar);
+    r(x+w*.48,y+2,3,h-4,wood);
+    r(x+2,y+Math.round(h*.52),w-4,3,wood);
+    r(x-7,y+h+6,w+14,5,p.woodLight);
+    // Short fabric panels frame the window without hiding the scenery.
+    r(x-6,y-7,8,h+6,p.leaf);
+    r(x+w-2,y-7,8,h+6,p.leaf2);
+    r(x-6,y-7,w+14,3,wood);
+    r(x-5,y+Math.floor(h*.57),7,3,p.flower2);
+    r(x+w-2,y+Math.floor(h*.57),7,3,p.flower2);
+  }
+  function plantPot(p,x,y,small=false){
+    const width=small?11:17,height=small?9:13;
+    r(x,y,width,height,p.trunkLight);
+    r(x+2,y+2,width-4,2,p.woodLight);
+    const cx=x+Math.floor(width/2);
+    r(cx-1,y-15,3,16,p.leafDark);
+    r(cx-7,y-12,9,7,p.leaf2);r(cx+1,y-14,9,7,p.leaf);
+    r(cx-3,y-19,7,8,p.leaf3);
+    r(x-3,y+height-1,width+6,2,p.grassShade);
+  }
+  function miniBooks(p,x,y,number=6){
+    const hues=['#82a38b','#bd9a90','#a2b0be','#d6bd93','#a98fbc'];
+    for(let i=0;i<number;i++){
+      const h=13+(i*7)%8;
+      r(x+i*6,y-h,5,h,hues[i%hues.length]);
+      r(x+i*6+2,y-h+3,1,h-5,p.wall);
+    }
+  }
+  function roomRug(p,x,y,w,h){
+    const outside=p.night?'#8b6871':'#b98b92';
+    const inside=p.night?'#b18d91':'#ecd2c7';
+    oval(x+w/2,y+h/2,w/2,h/2,outside);
+    oval(x+w/2,y+h/2,w/2-5,h/2-4,inside);
+    r(x+15,y+h/2-1,w-30,2,p.flower);
+    r(x+w/2-8,y+h/2-4,16,8,p.wall);
+  }
+  function hearth(p,t){
+    // Recessed into the wall: a narrow fireplace, not a freestanding block.
+    const stone=p.night?'#898c88':'#b7b5a6';
+    const stoneLight=p.night?'#b0b0a2':'#dad4c3';
+    r(335,84,46,63,stone);
+    r(338,88,40,59,stoneLight);
+    for(const [x,y] of [[340,95],[356,95],[343,108],[361,108]]){
+      r(x,y,11,2,stone);
+    }
+    r(333,83,50,5,p.woodLight);
+    r(345,111,26,36,p.dark);
+    r(349,117,18,30,'#403734');
+    r(346,143,25,3,p.trunk);
+    const flicker=motion.matches?0:Math.sin(t*.008)*2;
+    r(353,132,11,11,'#bf6744');
+    r(355,126+flicker,8,14,'#e9a44c');
+    r(358,133+flicker,4,7,'#ffebae');
+    r(334,146,48,4,p.wood);
   }
   function interior(p,t){
-    // A completely new, layered room: wall beams, window, bookcase,
-    // reading chair, proper bed, fireplace and a clear walking space.
-    r(0,0,400,250,p.indoorWall);
-    for(let i=0;i<10;i++)r(i*44,0,2,166,p.indoorWall2);
-    r(0,0,400,15,p.wood);r(0,148,400,14,p.wood);r(17,0,9,165,p.wood);
-    r(280,0,9,165,p.wood);
-    r(0,163,400,87,p.floor);
-    for(let i=0;i<12;i++){r(i*36+3,164,2,86,p.furniture);r(i*36+8,175,28,2,p.floorLight)}
-    for(let y=185;y<250;y+=22)r(0,y,400,2,p.furniture);
-    // View outside through an actual illuminated window.
-    r(41,34,106,93,p.furniture);r(46,39,96,83,p.window);
-    r(49,42,90,75,p.night?'#314a67':'#8ac9dc');
-    if(p.night){r(100,57,14,16,p.glow);r(104,54,9,20,p.glow)}
-    else{cloud(54,67,.53,p.cloud)}
-    r(91,42,7,75,p.wood);r(49,83,90,6,p.wood);
-    r(36,121,119,9,p.furnitureLight);
-    // Soft green curtains frame the window.
-    r(32,28,12,92,p.leaf);r(143,28,12,92,p.leaf);r(33,27,121,5,p.woodLight);
-    r(34,70,10,5,p.flower2);r(144,70,10,5,p.flower2);
-    bookshelf(p);
+    // Living room: one tiny bed, one properly sized armchair, an inset
+    // fireplace and clear open space around Pip. Nothing overlaps.
+    roomShell(p);
+    roomWindow(p,32,52,83,69);
+    // Small picture pair and shallow shelf.
+    r(144,68,31,34,p.wood);
+    r(147,71,25,28,p.wall);
+    r(158,83,2,13,p.leafDark);
+    r(151,82,10,7,p.flower);r(160,78,8,8,p.flower3);
+    r(191,77,28,30,p.wood);
+    r(194,80,22,24,p.wall);
+    r(204,91,2,11,p.leafDark);
+    r(198,88,7,6,p.leaf2);r(206,86,6,7,p.flower2);
+    r(238,92,52,5,p.woodLight);
+    miniBooks(p,244,92,6);
+    plantPot(p,275,80,true);
     hearth(p,t);
-    // Left bed with wooden posts, pillows, blanket and quilt pattern.
-    r(25,177,124,51,p.furniture);r(33,166,111,49,p.wood);
-    r(39,172,100,36,p.wallShadow);r(44,174,28,20,p.wall);
-    r(78,173,59,34,'#b98e97');
-    r(80,184,55,5,'#d1abb2');r(80,200,55,4,p.wall);
-    r(19,171,8,62,p.wood);r(143,172,8,60,p.wood);
-    r(21,167,4,5,p.woodLight);r(145,167,4,5,p.woodLight);
-    // A woven circular rug, placed in the open walking space.
-    r(166,210,121,26,'#b58f81');r(171,207,111,25,'#d9bda3');r(181,215,91,12,'#d19a9b');
-    r(198,220,55,3,p.wall);
-    // Reading stool and floor lamp by the bookshelves.
-    r(255,171,26,12,p.furnitureLight);r(259,182,4,27,p.wood);r(273,182,4,27,p.wood);
-    r(283,105,4,71,p.furniture);r(273,105,25,8,p.glow);r(278,96,16,12,p.wall);
-    // Potted fern
-    r(155,129,19,20,p.wood);r(158,125,13,7,p.trunkLight);
-    for(const dx of [-16,-8,0,9,17]){r(164+dx,119-Math.abs(dx)*.5,4,14,p.leaf);r(162+dx,111-Math.abs(dx)*.4,8,6,p.leaf2)}
-    // The main room is now a living/bedroom, not the office.
-    r(193,157,76,51,p.furniture);r(199,161,64,39,'#b9988b');
-    r(204,167,54,23,'#d6b9ad');
-    r(195,192,9,20,p.wood);r(261,192,9,20,p.wood);
-    r(207,200,48,6,p.woodLight);
-    r(276,174,32,8,p.furnitureLight);
-    r(282,181,5,25,p.wood);r(301,181,5,25,p.wood);
-    r(289,164,10,9,p.wall);r(291,157,6,8,p.flower3);
-    // Three framed pressed flowers on the wall.
-    for(const [x,y,c] of [[186,70,p.leaf2],[230,80,p.flower3],[274,70,p.flower]]){
-      r(x,y,25,29,p.wood);r(x+3,y+3,19,23,p.wall);
-      r(x+12,y+10,2,14,p.leafDark);r(x+7,y+11,6,7,c);r(x+13,y+9,6,8,c);
-    }
-
-    // Floating dust motes
-    if(p.night)for(let i=0;i<8;i++){const x=160+hash(i,55)*116,y=18+hash(i,56)*125;if(Math.sin(t*.002+i)>.1)r(x,y,2,2,p.glow)}
+    // Low bed fitted to Pip (roughly 2x her width).
+    r(38,169,72,30,p.wood);
+    r(41,164,67,26,p.woodLight);
+    r(46,166,62,17,p.wallShadow);
+    r(47,167,20,14,p.wall);
+    r(69,168,36,19,'#c99ca6');
+    r(71,179,34,4,'#efd1d6');
+    r(36,158,6,45,p.trunk);
+    r(109,161,5,40,p.trunk);
+    r(37,155,5,5,p.woodLight);
+    r(109,158,5,5,p.woodLight);
+    // A single armchair, aligned along the room's right wall.
+    r(263,163,41,34,p.wood);
+    r(268,156,32,34,'#bd949b');
+    r(272,161,24,26,'#dfb9bf');
+    r(260,181,9,23,p.wood);
+    r(300,181,8,23,p.wood);
+    r(271,191,27,8,'#c79ba3');
+    r(267,201,5,8,p.trunk);
+    r(299,201,5,8,p.trunk);
+    // Side table, proportionate to the chair, and a small mug.
+    r(311,182,18,5,p.woodLight);
+    r(315,187,3,19,p.trunk);
+    r(325,187,3,19,p.trunk);
+    r(317,175,8,8,p.wall);
+    r(318,173,6,3,p.flower3);
+    // Modest shelf of books beside the bed, grounded on the skirting.
+    r(144,102,54,47,p.wood);
+    r(148,106,46,39,p.trunkLight);
+    r(147,122,48,4,p.woodLight);
+    r(147,143,48,4,p.woodLight);
+    miniBooks(p,152,122,6);
+    miniBooks(p,153,143,5);
+    r(158,147,5,6,p.trunk);
+    r(185,147,5,6,p.trunk);
+    roomRug(p,130,214,117,22);
+    // A tiny folded floor cushion, NOT a giant second chair.
+    r(232,195,22,9,'#c69fa7');
+    r(236,193,14,3,'#f1d6d9');
+    if(p.night&&Math.sin(t*.0017)>0)r(207,85,2,2,p.glow);
   }
   function study(p,t){
-    // Dedicated office: its own window, shelving, computer and writing desk.
-    r(0,0,400,250,p.indoorWall2);
-    for(let x=24;x<400;x+=48)r(x,0,2,163,p.indoorWall);
-    r(0,0,400,14,p.wood);r(0,151,400,13,p.woodLight);
-    r(0,164,400,86,p.floor);
-    for(let x=0;x<400;x+=40){r(x+2,166,2,84,p.furniture);r(x+8,175,25,2,p.floorLight)}
-    for(let y=187;y<250;y+=23)r(0,y,400,2,p.furniture);
-    r(25,34,108,101,p.furniture);r(31,40,96,90,p.woodLight);
-    r(36,45,86,79,p.night?'#425d7b':'#92ccde');
-    polygon([[36,113],[70,88],[99,105],[122,91],[122,124],[36,124]],p.hillFar);
-    if(!p.night)cloud(48,61,.48,p.cloud);
-    r(76,45,5,78,p.wood);r(36,84,86,5,p.wood);
-    r(25,36,11,91,p.leaf2);r(123,36,10,91,p.leaf);
-    r(24,130,112,8,p.furnitureLight);
-    // Window bench with cushion.
-    r(27,144,108,20,p.wood);r(32,139,98,12,'#c4a4ab');
-    for(const x of [284,335]){
-      r(x,27,44,123,p.furniture);r(x+4,32,36,113,p.wood);
-      for(const y of [63,102,141]){
-        r(x+3,y,38,5,p.furnitureLight);
-        for(let i=0;i<4;i++){
-          const h=12+i%3*4;
-          r(x+7+i*8,y-h,6,h,['#92a38d','#c99b91','#9aabb9','#d2ba8d'][i]);
-          r(x+9+i*8,y-h+3,1,Math.max(2,h-5),p.wall);
-        }
-      }
+    // Study: a single-person desk, mini monitor and properly sized stool.
+    roomShell(p);
+    roomWindow(p,32,52,79,66);
+    // Noticeboard for Pip's questions.
+    r(139,56,67,45,p.wood);
+    r(143,60,59,37,p.wallShadow);
+    r(148,64,19,13,p.wall);
+    r(172,68,23,15,p.flower2);
+    r(152,84,38,4,p.wall);
+    r(151,65,3,3,p.roof);
+    r(183,67,3,3,p.roof);
+    // Bookshelf is shorter and shallower, anchored to the back wall.
+    r(313,67,57,80,p.wood);
+    r(317,71,49,72,p.trunkLight);
+    for(const y of [94,119,142]){
+      r(316,y,51,4,p.woodLight);
     }
-    // Real little computer at a quiet workbench.
-    r(146,131,133,12,p.furniture);r(151,140,10,66,p.wood);
-    r(263,140,10,66,p.wood);r(144,127,138,7,p.furnitureLight);
-    r(166,78,83,48,p.dark);r(171,82,73,39,p.woodLight);
-    r(176,87,63,31,p.night?'#365569':'#a3d9db');
-    r(182,93,39,3,p.glow);r(182,101,49,3,p.leaf3);
-    r(182,109,29,3,p.roofLight);
-    r(202,125,9,8,p.furniture);r(194,133,27,4,p.woodLight);
-    r(172,140,58,6,p.dark);r(177,140,48,3,p.wall);
-    r(238,136,31,9,p.wall);r(241,138,23,2,p.wallShadow);
-    r(148,96,5,30,p.furniture);r(143,90,22,8,p.woodLight);
-    r(148,86,9,7,p.glow);
-    if(!motion.matches&&Math.sin(t*.002)>0)r(210,100,4,3,p.glow);
-    r(199,161,48,11,'#b99194');r(204,175,5,28,p.wood);
-    r(239,175,5,28,p.wood);
-    r(142,213,136,25,'#b79e91');r(148,210,123,25,'#e9cfbc');
-    r(169,217,83,11,'#ca9a9e');
-    r(144,173,18,25,p.wood);r(147,165,12,10,p.trunkLight);
-    for(const dx of [-14,-7,0,9,16]){
-      r(152+dx,153-Math.abs(dx)*.3,5,13,p.leaf);
-      r(150+dx,149-Math.abs(dx)*.2,8,6,p.leaf3);
-    }
+    miniBooks(p,322,94,7);
+    miniBooks(p,322,119,7);
+    miniBooks(p,322,142,7);
+    r(317,147,6,8,p.trunk);
+    r(360,147,6,8,p.trunk);
+    // Worktop sits at Pip's torso height, not above her ears.
+    r(166,150,92,7,p.woodLight);
+    r(170,157,5,40,p.trunk);
+    r(250,157,5,40,p.trunk);
+    r(178,157,3,33,p.wood);
+    // Computer: a compact 40x30 monitor with keyboard and a glowing screen.
+    r(192,113,45,34,p.dark);
+    r(196,117,37,25,p.window);
+    r(200,121,27,3,p.glow);
+    r(200,127,20,3,p.leaf3);
+    r(200,134,29,2,p.roofLight);
+    r(210,147,7,4,p.wood);
+    r(203,151,21,2,p.trunkLight);
+    r(193,157,40,5,p.wall);
+    r(197,158,30,1,p.stone);
+    // Lamp, letter tray and plant in their own little spaces.
+    r(174,125,2,24,p.trunk);
+    r(169,122,13,5,p.flower2);
+    r(174,119,6,4,p.glow);
+    r(236,146,18,4,p.wall);
+    r(239,141,14,5,'#f0d6d2');
+    plantPot(p,276,141,true);
+    // One small chair tucked under the desk.
+    r(196,181,24,7,'#bb939d');
+    r(199,165,18,18,'#d7b3b9');
+    r(200,188,4,15,p.trunk);
+    r(214,188,4,15,p.trunk);
+    roomRug(p,155,215,116,21);
+    r(38,175,45,12,p.woodLight);
+    r(42,187,5,15,p.trunk);
+    r(75,187,5,15,p.trunk);
+    r(44,168,14,7,p.flower3);
+    r(59,170,16,6,p.flower);
   }
   function kitchen(p,t){
-    // Asymmetric cottage breakfast nook, not a wall of fitted cabinets.
-    r(0,0,400,250,p.indoorWall2);
-    for(let x=15;x<400;x+=55)r(x,0,2,163,p.indoorWall);
-    r(0,0,400,14,p.wood);r(0,150,400,14,p.woodLight);
-    r(0,164,400,86,p.floor);
-    for(let x=0;x<400;x+=40){r(x+2,166,2,84,p.furniture);r(x+8,175,25,2,p.floorLight)}
-    for(let y=187;y<250;y+=23)r(0,y,400,2,p.furniture);
-    // Sunlit window with fresh herbs on its sill.
-    r(23,32,108,101,p.furniture);r(28,37,98,91,p.woodLight);
-    r(33,42,88,80,p.night?'#425c78':'#9acfdc');
-    polygon([[33,112],[60,89],[91,103],[121,85],[121,122],[33,122]],p.hillFar);
-    if(!p.night)cloud(45,62,.4,p.cloud);
-    r(74,42,5,80,p.wood);r(33,81,88,5,p.wood);
-    r(23,34,11,92,p.leaf2);r(121,34,10,92,p.leaf);
-    r(20,130,116,8,p.furnitureLight);
-    for(const x of [48,76,106]){
-      r(x,119,11,12,p.trunkLight);r(x+2,113,7,8,p.leaf2);
-      r(x+5,109,3,7,p.leaf3);
+    // Breakfast nook: a two-place table, small stove, window herbs and
+    // open shelves. All furnishings are roughly Pip-sized.
+    roomShell(p);
+    roomWindow(p,33,52,81,68);
+    // Dried herbs and two shallow shelves instead of huge wall cupboards.
+    for(const y of [74,107]){
+      r(145,y,96,5,p.woodLight);
     }
-    // Open shelves, colourful jars and hanging herbs.
-    for(const y of [49,93]){
-      r(153,y,119,7,p.furniture);r(158,y-2,109,4,p.woodLight);
+    for(const [x,y,c] of [[150,55,p.flower],[171,53,p.flower3],
+      [197,56,p.flower2],[218,52,p.leaf2],
+      [152,89,p.flower3],[181,88,p.flower],[213,89,p.flower2]]){
+      r(x,y,10,14,p.wall);
+      r(x+2,y-3,6,4,p.woodLight);
+      r(x+2,y+5,6,5,c);
     }
-    for(const [x,y,c] of [[164,23,p.flower],[188,26,p.flower3],
-      [215,23,p.flower2],[242,22,p.leaf2],[170,65,p.flower],
-      [201,67,p.flower3],[237,67,p.flower2]]){
-      r(x,y,13,21,p.wall);r(x+2,y-4,9,5,p.woodLight);
-      r(x+3,y+7,7,5,c);
+    for(const x of [165,199,225]){
+      r(x,112,2,11,p.leafDark);
+      r(x-4,120,10,6,p.leaf2);
     }
-    for(const x of [170,208,246]){
-      r(x,106,2,16,p.trunk);r(x-4,117,10,7,p.leaf2);
+    // A shallow kitchen counter, flush against the back wall.
+    r(272,143,112,9,p.woodLight);
+    r(277,152,102,30,p.wood);
+    for(const x of [281,306,336,361]){
+      r(x,155,23,23,p.trunkLight);
+      r(x+19,164,2,4,p.wallShadow);
     }
-    // Compact worktop and inset cooker on the right.
-    r(290,77,98,87,p.wallShadow);r(296,82,86,77,p.indoorWall);
-    r(278,128,115,38,p.furniture);
-    r(282,132,107,30,p.woodLight);r(275,120,121,11,p.furnitureLight);
-    r(298,121,31,5,p.stoneLight);r(307,121,15,3,p.water);
-    r(311,113,3,9,p.furniture);r(311,112,14,3,p.woodLight);
-    r(354,121,27,6,p.dark);
-    r(351,136,37,30,p.dark);r(356,141,28,20,p.stone);
-    r(361,145,18,12,p.window);
-    r(279,65,3,35,p.wood);r(273,96,16,9,p.roof);
-    r(276,99,10,3,p.roofLight);
-    // Little table with a basket of berries, low stools and a woven rug.
-    oval(112,200,63,16,p.furniture);oval(112,195,61,15,p.woodLight);
-    r(107,204,12,38,p.wood);
-    r(94,189,34,8,p.wall);r(98,184,26,10,p.trunkLight);
-    for(const [dx,dy,c] of [[-11,0,'#c4546f'],[0,-4,'#aa4961'],
-      [9,0,'#e98a91'],[-3,3,'#bd6279'],[12,3,'#a54762']])
-      r(111+dx,187+dy,6,5,c);
-    r(34,193,24,11,p.woodLight);r(38,202,5,36,p.wood);
-    r(51,202,5,36,p.wood);r(171,195,24,12,p.woodLight);
-    r(175,205,5,34,p.wood);r(190,205,5,34,p.wood);
-    r(228,214,142,24,'#bc9e8c');r(236,210,124,25,'#e1c5ac');
-    r(253,217,91,11,'#c59898');
-    r(236,172,31,20,p.wood);r(240,165,23,12,p.trunkLight);
-    r(245,162,12,5,p.leaf3);
+    r(286,143,28,5,p.stoneLight);r(292,143,17,3,p.water);
+    r(299,135,3,8,p.wood);
+    r(299,133,15,3,p.woodLight);
+    // Compact stove sized for Pip, not a full adult human range.
+    r(340,135,37,7,p.dark);
+    r(344,137,11,3,p.stone);
+    r(362,137,11,3,p.stone);
+    r(340,157,35,24,p.dark);
+    r(344,161,27,17,p.stone);
+    r(349,164,17,10,p.window);
+    r(348,152,3,3,p.glow);
+    r(367,152,3,3,p.glow);
+    // Breakfast table has a half-width top and two small seats.
+    oval(97,193,40,10,p.wood);
+    oval(97,189,39,10,p.woodLight);
+    r(93,198,8,25,p.trunk);
+    r(85,181,26,7,p.wall);
+    r(88,178,20,5,p.trunkLight);
+    for(const [dx,dy,c] of [[-9,0,'#c4546f'],[-2,-4,'#aa4961'],
+      [6,0,'#e98a91'],[1,2,'#bd6279']]){
+      r(99+dx,184+dy,5,4,c);
+    }
+    r(42,190,19,7,p.trunkLight);
+    r(45,197,4,19,p.trunk);
+    r(56,197,4,19,p.trunk);
+    r(137,190,19,7,p.trunkLight);
+    r(140,197,4,19,p.trunk);
+    r(151,197,4,19,p.trunk);
+    // Tiny herb pots on the sill and a light, simple floor runner.
+    for(const x of [49,71,93]){
+      r(x,119,9,9,p.trunkLight);
+      r(x+3,114,3,8,p.leafDark);
+      r(x+1,112,7,5,p.leaf3);
+    }
+    roomRug(p,224,216,99,20);
+    plantPot(p,260,166,true);
+    // A small wicker basket instead of another large cabinet.
+    r(247,196,22,12,p.woodLight);
+    r(252,191,12,7,p.trunkLight);
+    r(254,187,8,4,p.flower3);
   }
+
   function creature(x,y,p,t,walk,home){
     const yy=Math.round(y+(walk?Math.sin(t*.008)*1.2:Math.sin(t*.0018)*.8));
     const xx=Math.round(x);
@@ -766,7 +862,7 @@
     if(isOutside(state.location))ctx.translate(-Math.round(camera),0);
     scene(p,state.location,t);
     const home=!isOutside(state.location);
-    creature(home?(state.room==='kitchen'?141:state.room==='study'?242:180):position.x,
+    creature(home?(state.room==='kitchen'?184:state.room==='study'?281:188):position.x,
       home?(state.room==='kitchen'?206:207):position.y,p,t,walking,home);
     ctx.restore();
     moveHitboxes();
@@ -785,7 +881,7 @@
     const b=document.getElementById('petInteract');
     const bubble=document.getElementById('bubble');
     const home=!isOutside(state.location);
-    const x=home?(state.room==='kitchen'?141:state.room==='study'?242:180):position.x-camera;
+    const x=home?(state.room==='kitchen'?184:state.room==='study'?281:188):position.x-camera;
     const y=home?(state.room==='kitchen'?206:207):position.y;
     if(b){b.style.left=x/W*100+'%';b.style.top=(y-9)/H*100+'%'}
     if(bubble){
@@ -801,6 +897,11 @@
       cottage.style.width=(159/W*100)+'%';
       cottage.style.height='48%';
       cottage.hidden=(55-camera>W||214-camera<0);
+    }
+    const computer=document.getElementById('computerInteract');
+    if(computer&&home&&state.room==='study'){
+      computer.style.left='45%';computer.style.top='40%';
+      computer.style.width='16%';computer.style.height='25%';
     }
     const world=document.getElementById('world');
     if(world)world.style.cursor=home?'default':'crosshair';
