@@ -40,6 +40,7 @@ export function safeWorld(world) {
   delete copy.dailyAI;
   delete copy.lastMessageAt;
   delete copy.lastManualResearch;
+  delete copy.lastForageAt;
   return copy;
 }
 
@@ -295,6 +296,7 @@ function safeImport(data) {
   out.location = ["meadow", "grove", "cottage"].includes(data.location) ? data.location : "meadow";
   out.lastOutdoor = data.lastOutdoor === "grove" ? "grove" : "meadow";
   out.room = data.room === "kitchen" ? "kitchen" : "study";
+  out.lastForageAt = 0;
   out.activity = clean(data.activity, 100) || fresh.activity;
   out.x = Math.max(12, Math.min(78, Number(data.x) || 57));
   out.y = Math.max(52, Math.min(77, Number(data.y) || 64));
@@ -426,6 +428,29 @@ async function handle(request, env) {
       });
       return json({ ok: true }, 200, headers);
     }
+    if (path === "/api/forage" && method === "POST") {
+      const outcome=await change(env, world=>{
+        if(world.location!=="meadow"&&world.location!=="grove")return "inside";
+        if(time()-(world.lastForageAt||0)<120_000)return "cooldown";
+        world.lastForageAt=time();
+        world.x=world.location==="grove"?122:116;
+        world.y=75;
+        world.activity="Picking ripe berries from the bushes";
+        world.stats.hunger=clamp(world.stats.hunger+9);
+        world.stats.joy=clamp(world.stats.joy+4);
+        world.skills.gardening=Math.min(100,(world.skills.gardening||0)+2);
+        world.plan={action:"Bring the berries home",
+          reason:"I found some ripe berries and think they'd make a lovely snack."};
+        world.decisions.unshift({at:time(),action:"Forage",reason:"The berry bushes looked ready to pick."});
+        world.decisions=cap(world.decisions,100);
+        note(world,"A handful of berries",
+          "I picked a few ripe berries from the bushes near the path.");
+        return "ok";
+      });
+      if(outcome.result==="inside")return fail(400,"Head outside to pick berries",headers);
+      if(outcome.result==="cooldown")return fail(429,"The berries need time to grow back",headers);
+      return json({ok:true},200,headers);
+    }
     if (path === "/api/read" && method === "POST") {
       await change(env, world => { world.unread = false; });
       return json({ ok: true }, 200, headers);
@@ -478,7 +503,13 @@ async function handle(request, env) {
       if (!wait.result) return fail(429, "Pip needs a little time between research trips", headers);
       try {
         const result = await wikipedia(chosen);
-        await change(env, world => discovery(world, result));
+        await change(env, world => {
+          discovery(world, result);
+          world.location="cottage";
+          world.room="study";
+          world.activity="Researching "+clean(chosen,70)+" on my little computer";
+          world.plan={action:"Think about my discovery",reason:"I want to understand what I just read."};
+        });
         return json(result, 200, headers);
       } catch { return fail(503, "Research source is unavailable. Try again later.", headers); }
     }
