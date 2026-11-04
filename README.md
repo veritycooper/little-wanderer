@@ -79,6 +79,20 @@ backend/Dockerfile          Container deployment option
 ```
 
 
+## Free cloud brain (Cloudflare)
+
+The project now includes an alternative **Cloudflare Workers + D1 + Workers AI** brain in the **cloudflare/** folder.
+
+- Works within Cloudflare Free allocations subject to their current limits and model availability. **No OpenAI API key is required.**
+- Stores Pip's world and approved memories in D1 and handles letters with Workers AI where available.
+- Runs scheduled activity checks every minute, including research and queued responses.
+- Keeps the current GitHub Pages front end and browser-only mode intact.
+- Provides an explicit, confirmed **Copy my saved world to the brain** control for a one-time transfer from a browser backup.
+
+The Cloudflare code is ready, but you must **create the database, set a private token and deploy the Worker** in your own Cloudflare account. Simply pushing to GitHub does not activate the service.
+
+**[Cloudflare setup instructions](cloudflare/README.md)**
+
 ## Connect the private AI brain
 
 The site itself is hosted by GitHub Pages, but Python models and SQLite require an independent service. A complete Python brain, tests and a ready-to-review Render Blueprint are now in this repo. Follow [the brain setup guide](backend/DEPLOY.md) for local testing, costs, privacy, hosting and connecting the website. **The AI service is not running until you explicitly deploy it.** Keep your API keys on the server, never in this public repo or the browser.
