@@ -1,0 +1,3 @@
+# Copy this to .dev.vars for local development. Never commit .dev.vars.
+# Generate a 32+ character random token.
+PET_API_TOKEN=replace-with-your-very-long-private-random-token
