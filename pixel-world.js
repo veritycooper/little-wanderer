@@ -164,34 +164,124 @@
     r(x-3,y-6,3,3,p.flower2);r(x+4,y-3,2,2,p.flower2);
   }
   function grove(p,t){
-    sky(p,t);land(p,true);
-    // Forest framing: trees in the distance and darker upper canopy.
-    for(const [x,y,s] of [[18,165,.9],[99,152,.75],[236,146,.73],[391,161,1.1]]){
+    sky(p,t);
+    land(p,true);
+
+    // Distant woodland layers: leave a clear centre, frame the view with trees.
+    for(const [x,y,s] of [[44,146,.55],[110,147,.55],[228,144,.56],[300,153,.52]]){
       tree(x,y,s,p,t);
     }
-    r(0,0,14,110,p.leafDark);r(0,0,95,18,p.leaf);r(77,0,68,13,p.leaf2);
-    r(315,0,85,20,p.leafDark);r(357,0,43,67,p.leaf);
-    r(0,158,400,5,p.grassShade);
-    // Curving stone trail through the middle of the clearing.
-    for(const [x,y,w] of [[168,166,24],[179,181,33],[168,200,30],[178,223,36],[181,245,45]]){
-      r(x,y,w,10,p.ground);r(x+2,y+1,w-4,8,p.stone);r(x+5,y+2,w-9,3,p.stoneLight);
+    // Broad overhead boughs, with the branches tucked into the scene corners.
+    r(0,0,70,15,p.leafDark);
+    r(0,15,38,11,p.leaf);
+    r(22,0,86,10,p.leaf2);
+    r(328,0,72,15,p.leafDark);
+    r(366,13,34,40,p.leaf);
+    r(348,0,30,9,p.leaf2);
+
+    // Rounded clearing: trees to either side, room for Pip and the path.
+    r(43,158,316,8,p.grassDeep);
+    r(71,165,254,8,p.grass);
+    tree(18,179,.83,p,t,true);
+    tree(384,178,.91,p,t,true);
+    // A little moss and undergrowth around the tree roots.
+    for(const [x,y,w] of [[5,184,45],[65,172,30],[342,173,41],[363,205,35]]){
+      r(x,y,w,7,p.leafDark);
+      r(x+3,y-4,w-6,7,p.leaf2);
+      r(x+8,y-8,Math.max(8,w-18),5,p.leaf3);
     }
-    // Crystal circle: mystical but grounded in the woodland.
-    for(const [x,y] of [[256,192],[275,202],[285,222],[253,229],[232,217]]){
-      r(x-5,y+2,11,7,p.ground);r(x-3,y-12,7,17,p.stone);r(x-1,y-17,3,7,p.stoneLight);
+
+    // The creek follows a single winding right-hand channel.
+    // Banks, water and highlights use the same silhouette, not stacked boxes.
+    const outer=[[316,163],[329,165],[325,185],[335,198],[338,214],
+      [357,235],[381,250],[335,250],[321,233],[307,215],
+      [304,198],[306,183]];
+    const inner=[[318,168],[325,169],[320,186],[331,199],[334,213],
+      [351,237],[369,250],[346,250],[327,230],[315,213],
+      [312,197],[313,183]];
+    polygon(outer,p.grassShade);
+    polygon(inner,p.waterDeep);
+    polygon([[319,170],[323,171],[318,187],[329,202],[331,214],
+      [347,239],[360,250],[350,250],[329,228],[318,211],
+      [314,197],[315,185]],p.water);
+    for(const [x,y,w] of [[316,180,7],[316,195,8],[321,207,9],
+      [335,233,12],[346,244,9]]){
+      r(x+Math.round(Math.sin(t*.0008+x)*2),y,w,2,p.waterLight);
     }
-    r(266,204,4,13,p.flower3);r(259,211,2,5,p.glow);
-    // A woodland creek instead of another pond.
-    polygon([[303,162],[316,165],[311,183],[326,195],[330,213],[354,234],[383,250],[339,250],[318,232],[307,217],[301,201],[295,185]],p.grassShade);
-    polygon([[307,168],[313,168],[307,185],[320,201],[323,218],[345,243],[364,250],[349,250],[320,227],[314,214],[302,199],[301,186]],p.water);
-    for(const [x,y] of [[310,178],[312,198],[321,216],[336,237]])r(x,y,10,3,p.waterLight);
-    // Log bridge crosses the creek close to lower right.
-    log(p,286,214,56,10);r(292,208,4,6,p.trunk);r(331,208,4,6,p.trunk);
-    for(const [x,y] of [[37,207],[65,232],[105,199],[142,221],[219,183],[346,232]])mushroom(x,y,p,(x%2)?p.flower3:p.flower);
-    bushes(p,'grove');flowers(p,'grove');
-    // Nearby cabin sign to give the second biome a sense of direction.
-    r(116,170,4,29,p.wood);r(105,162,31,15,p.trunk);r(107,164,27,11,p.woodLight);
-    r(113,169,12,3,p.wall);
+    // Reeds belong on the stream bank rather than in the water.
+    for(const [x,y] of [[301,176],[304,190],[349,222],[377,241]]){
+      r(x,y-10,2,10,p.leafDark);
+      r(x+2,y-5,3,5,p.leaf2);
+    }
+
+    // One continuous trail, curving towards the bridge.
+    // Stones grow wider as they approach the foreground/right bank.
+    for(const [x,y,w] of [[134,169,23],[151,181,27],[171,195,29],
+      [192,209,32],[217,218,37],[246,221,33],[273,218,29]]){
+      r(x-1,y+2,w+2,9,p.ground);
+      r(x,y,w,8,p.stone);
+      r(x+3,y+1,w-6,5,p.stoneLight);
+      r(x+5,y+5,w-10,2,p.stone);
+    }
+
+    // Bridge spans BOTH banks at the same height, across the actual creek.
+    r(281,216,72,8,p.trunk);
+    r(284,212,66,9,p.wood);
+    for(let x=286;x<=344;x+=9){
+      r(x,213,7,6,p.woodLight);
+      r(x+2,215,2,3,p.trunkLight);
+    }
+    r(287,198,5,19,p.trunk);
+    r(344,198,5,19,p.trunk);
+    r(287,198,62,5,p.woodLight);
+    r(292,205,53,3,p.wood);
+    r(282,222,73,3,p.ground);
+
+    // A small mossy stone circle to the left of the footpath.
+    for(const [x,y,h] of [[76,213,12],[92,202,17],[111,204,14],
+      [125,214,12],[109,229,10],[85,229,11]]){
+      r(x-5,y+2,13,5,p.grassShade);
+      r(x-3,y-h+2,9,h,p.stone);
+      r(x,y-h,4,8,p.stoneLight);
+      r(x-2,y-h+4,2,3,p.leaf3);
+    }
+    r(100,219,5,10,p.flower3);
+    r(102,215,3,4,p.glow);
+
+    // A sign away from the stones and the creature's main route.
+    r(54,170,5,29,p.trunk);
+    r(44,166,38,16,p.trunk);
+    r(46,168,34,12,p.woodLight);
+    r(51,173,18,3,p.wall);
+    r(71,172,5,3,p.wall);
+    r(53,183,6,17,p.trunk);
+
+    // Ground cover in coherent patches, avoiding the creek and bridge.
+    bushes(p,'grove');
+    const beds=[
+      [[31,218],[47,228],[58,209],[65,238]],
+      [[146,232],[161,241],[179,228]],
+      [[221,241],[241,237],[258,245]],
+      [[362,228],[378,232],[391,215]]
+    ];
+    let colourIndex=0;
+    for(const bed of beds){
+      for(const [x,y] of bed){
+        flower(x,y,p,[p.flower,p.flower2,p.flower3][colourIndex++%3]);
+      }
+    }
+    for(const [x,y,col] of [[36,205,p.flower3],[57,226,p.flower],
+      [122,236,p.flower3],[231,188,p.flower2],[264,189,p.flower3],
+      [374,238,p.flower]]){
+      mushroom(x,y,p,col);
+    }
+    // Fireflies only at night; tiny sparkle rather than emoji.
+    if(p.night){
+      for(let i=0;i<7;i++){
+        const x=60+hash(i,87)*300, y=159+hash(i,88)*67;
+        if(Math.sin(t*.002+i*2.3)>.12)r(x,y,2,2,p.glow);
+      }
+    }
   }
   function hearth(p,t){
     // Stone fireplace on the right with a gentle flicker at night.
@@ -295,10 +385,16 @@
   const screenPoint=(x,y)=>{
     let px=36+Math.max(10,Math.min(79,Number(x)||57))*3.22;
     let py=126+Math.max(50,Math.min(79,Number(y)||64))*.93;
-    // Prevent standing inside the house or pond. Both biomes share walkable centre.
-    if(px<184)py=Math.max(py,211);
-    if(state.location==='meadow'&&px>279&&py<236){px=266;py=Math.max(py,205)}
-    if(state.location==='grove'&&px>298){px=280}
+    if(state.location==='grove'){
+      // Keep the creature in the actual woodland clearing, away from the stream,
+      // bridge rail and decorative rock circle.
+      px=Math.max(145,Math.min(274,px));
+      py=Math.max(193,Math.min(235,py));
+      if(px<180&&py>216)px=183;
+    }else if(state.location==='meadow'){
+      if(px<184)py=Math.max(py,211); // Outside the cottage
+      if(px>279&&py<236){px=266;py=Math.max(py,205)} // Pond
+    }
     return {x:px,y:Math.min(239,py)};
   };
   function update(dt,t){
@@ -309,8 +405,9 @@
     }else walking=false;
     if(!walking&&!motion.matches&&t-lastWander>17000){
       lastWander=t;
-      const nx=Math.max(187,Math.min(274,position.x+rand(-31,31)));
-      const ny=Math.max(183,Math.min(237,position.y+rand(-15,15)));
+      const grove=state.location==='grove';
+      const nx=Math.max(grove?183:187,Math.min(grove?269:274,position.x+rand(-27,27)));
+      const ny=Math.max(grove?196:211,Math.min(grove?232:237,position.y+rand(-13,13)));
       target={x:nx,y:ny};
     }
   }
