@@ -1,13 +1,16 @@
 (() => {
 'use strict';
 const $=id=>document.getElementById(id), clamp=n=>Math.max(0,Math.min(100,Math.round(n))), now=()=>Date.now(), rand=a=>a[Math.floor(Math.random()*a.length)];
-const DATA_KEY='little-wanderer-v1',CONFIG_KEY='little-wanderer-config',THEME_KEY='little-wanderer-theme-v2';
+const DATA_KEY='little-wanderer-v1',CONFIG_KEY='little-wanderer-config',THEME_KEY='little-wanderer-theme-v2',BACKUP_KEY='little-wanderer-before-cloud-brain-v1',IMPORTED_KEY='little-wanderer-cloud-brain-imported';
 const topics=['wildflowers','the moon','butterflies','forests','mushrooms','stars','birds','oceans','bees','clouds','foxes','seashells'];
 const statMeta=[['hunger','▤','Full tummy'],['energy','☾','Energy'],['social','✉','Social'],['joy','✧','Happiness'],['curiosity','✦','Curiosity']];
 const safeText=s=>String(s||'').slice(0,2000);
 const makeWorld=()=>({version:1,name:'Pip',created:now(),lastTick:now(),stats:{hunger:78,energy:81,social:74,joy:84,curiosity:68},skills:{exploring:3,reading:2,friendship:4,gardening:1},interests:Object.fromEntries(topics.map((t,i)=>[t,i<4?2:1])),location:'meadow',lastOutdoor:'meadow',activity:'Admiring the flowers',x:57,y:64,night:false,messages:[{id:'hello',from:'pet',text:"Oh! Hello there. I'm Pip. I found a cosy cottage and some very interesting flowers. Do you think we could be friends?",at:now()}],journal:[{id:'first',at:now(),title:'A new beginning',text:"Today I arrived in a little meadow. There's a cottage, a pond, and enough curiosity to fill a whole library. I wonder who I'll meet?"}],discoveries:[],pending:[],nextAction:now()+65000,nextResearch:now()+1000*60*12,unread:false,memories:[],decisions:[],plan:{action:'explore',reason:'I want to discover something new.'}});
 let state;try{state={...makeWorld(),...JSON.parse(localStorage.getItem(DATA_KEY))};}catch{state=makeWorld()}
 let config;try{config=JSON.parse(localStorage.getItem(CONFIG_KEY))||{};}catch{config={}}
+const preserveBrowserSave=()=>{try{if(!localStorage.getItem(BACKUP_KEY))localStorage.setItem(BACKUP_KEY,JSON.stringify(state));}catch{toast('Unable to preserve a browser backup. Please export your memories first.');}};
+const updateMigrationButton=()=>{const button=$('migrateToBrain');if(!button)return;let eligible=false;try{eligible=Boolean(config.url&&config.token&&localStorage.getItem(BACKUP_KEY)&&localStorage.getItem(IMPORTED_KEY)!==config.url)}catch{}button.disabled=!eligible;};
+
 let uiNight;try{const theme=localStorage.getItem(THEME_KEY);uiNight=theme===null?Boolean(state.night):theme==='dark';}catch{uiNight=Boolean(state.night)}
 const setTheme=(night)=>{uiNight=Boolean(night);state.night=uiNight;document.body.classList.toggle('dark',uiNight);document.documentElement.style.colorScheme=uiNight?'dark':'light';$('nightButton').setAttribute('aria-pressed',String(uiNight));$('nightButton').setAttribute('aria-label',uiNight?'Enable light mode':'Enable dark mode');$('themeGlyph').textContent=uiNight?'☼':'☾';$('themeLabel').textContent=uiNight?'Light mode':'Dark mode';const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=uiNight?'#241d25':'#f8f1f1';try{localStorage.setItem(THEME_KEY,uiNight?'dark':'light')}catch{}};
 const save=()=>{state.lastTick=now();try{localStorage.setItem(DATA_KEY,JSON.stringify(state));}catch(e){console.warn('Could not save state:',e)}};
@@ -121,16 +124,16 @@ let busy=false;
 async function lookupResearch(){if(busy)return;busy=true;const interest=topic();$('researchStatus').textContent=state.name+' is researching '+interest+'...';say('I wonder...');try{let data;if(config.url&&config.token){const r=await api('/api/research',{method:'POST',body:JSON.stringify({topic:interest})});if(!r.ok)throw Error('Brain research unavailable');data=await r.json()}else{const search=await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent(interest)+'&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&format=json&origin=*');if(!search.ok)throw Error('Research unavailable');const json=await search.json();const page=Object.values(json.query?.pages||{})[0];if(!page||!page.extract)throw Error('No article');data={title:page.title,summary:page.extract.slice(0,550),url:'https://en.wikipedia.org/wiki/'+encodeURIComponent(page.title.replaceAll(' ','_'))};}
 if(!state.discoveries.some(d=>d.url===data.url)){state.discoveries.unshift({...data,at:now(),topic:interest});journal('Something I learned about '+interest,'I read about '+data.title+'. '+data.summary.slice(0,180));state.interests[interest]=Math.min(8,(state.interests[interest]||1)+1);skill('reading',5);state.stats.curiosity=clamp(state.stats.curiosity+16);say('I found something!')}else say('I remember this one!');$('researchStatus').textContent='Last explored: '+data.title;}catch(e){$('researchStatus').textContent='The library is quiet right now. I can try again later.';journal('A research attempt','I tried to explore '+interest+', but could not reach a source this time. I will try again.');}finally{state.nextResearch=now()+1000*60*(12+Math.floor(Math.random()*18));busy=false;save();render();}}
 const api=(route,options={})=>fetch(config.url.replace(/\/$/,'')+route,{...options,headers:{'Content-Type':'application/json','Authorization':'Bearer '+config.token,...options.headers},signal:AbortSignal.timeout(12000)});
-async function connect(){const url=$('backendUrl').value.trim().replace(/\/$/,'');const token=$('backendToken').value.trim();if(!url||!token){config={};localStorage.removeItem(CONFIG_KEY);$('backendStatus').textContent='Browser-only mode.';return toast('Using browser-only mode.')}if(!/^https:\/\//.test(url)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url))return toast('Use an HTTPS URL or local localhost server.');try{config={url,token};const r=await api('/api/state');if(!r.ok)throw Error('Server rejected connection');const data=await r.json();localStorage.setItem(CONFIG_KEY,JSON.stringify(config));$('backendStatus').textContent='Connected to persistent brain (checking reply mode...)';
+async function connect(){const url=$('backendUrl').value.trim().replace(/\/$/,'');const token=$('backendToken').value.trim();if(!url||!token){config={};localStorage.removeItem(CONFIG_KEY);$('backendStatus').textContent='Browser-only mode.';updateMigrationButton();return toast('Using browser-only mode.')}if(!/^https:\/\//.test(url)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url))return toast('Use an HTTPS URL or local localhost server.');try{config={url,token};const r=await api('/api/state');if(!r.ok)throw Error('Server rejected connection');const data=await r.json();preserveBrowserSave();localStorage.setItem(CONFIG_KEY,JSON.stringify(config));$('backendStatus').textContent='Connected to persistent brain (checking reply mode...)';
 try{
  const h=await fetch(config.url+'/health',{signal:AbortSignal.timeout(7000)});
  if(h.ok){
    const mode=(await h.json()).mode;
-   $('backendStatus').textContent=mode==='openai'?'Connected · AI-generated letters enabled':mode==='ollama'?'Connected · local model letters enabled':'Connected · scripted fallback letters (no model configured)';
+   $('backendStatus').textContent=mode==='workers-ai'?'Connected · Cloudflare AI letters enabled':mode==='openai'?'Connected · AI-generated letters enabled':mode==='ollama'?'Connected · local model letters enabled':'Connected · scripted fallback letters (no model configured)';
  }
 }catch{
  $('backendStatus').textContent='Connected to persistent brain. Reply mode unavailable.';
-}$('connectionLabel').textContent='Connected to my brain ✦';toast('Connected to the brain server!');await sync();}catch{config={};toast('Could not connect. Check URL, token and CORS.');$('backendStatus').textContent='Connection failed; browser mode remains available.';}}
+}$('connectionLabel').textContent='Connected to my brain ✦';toast('Connected to the brain server!');await sync();updateMigrationButton();}catch{config={};toast('Could not connect. Check URL, token and CORS.');$('backendStatus').textContent='Connection failed; browser mode remains available.';updateMigrationButton();}}
 let syncLock=false;
 async function sync(){if(!config.url||!config.token||syncLock)return;syncLock=true;try{const r=await api('/api/state');if(!r.ok)throw Error('Server unavailable');const server=await r.json();const place=state.location,lastOutdoor=state.lastOutdoor;Object.assign(state,server);if(place==='grove'||(place==='cottage'&&lastOutdoor==='grove')){state.location=place;state.lastOutdoor=lastOutdoor;}state.night=uiNight;save();render();$('connectionLabel').textContent='Brain is online ✦';}catch{$('connectionLabel').textContent='Brain is offline · browser mode';}finally{syncLock=false}}
 function switchTab(which){for(const b of document.querySelectorAll('.tab')){const selected=b.dataset.tab===which;b.classList.toggle('selected',selected);b.setAttribute('aria-selected',selected)}for(const v of ['chat','journal','discoveries','activity'])$(v+'View').hidden=v!==which;if(which==='chat'){state.unread=false;$('unread').hidden=true;save()}}
@@ -156,11 +159,29 @@ $('outside').addEventListener('click',()=>visitScene(state.lastOutdoor||'meadow'
 $('nightButton').addEventListener('click',()=>{setTheme(!uiNight);renderWorld();save()});
 $('rename').addEventListener('click',async()=>{const name=$('petName').value.trim().slice(0,18);if(!name)return;if(config.url&&config.token){try{const r=await api('/api/name',{method:'POST',body:JSON.stringify({name})});if(r.ok){await sync();return}}catch{}}state.name=name;toast('Your companion is now '+name);save();render()});
 $('connect').addEventListener('click',connect);
+$('migrateToBrain').addEventListener('click',async()=>{
+ if(!config.url||!config.token)return toast('Connect your Cloudflare brain first.');
+ const old=localStorage.getItem(BACKUP_KEY);
+ if(!old)return toast('No browser backup is available. Please export a copy first.');
+ if(!confirm('Copy the original browser world to your connected brain?\n\nThis REPLACES the brain server\'s current pet, letters, journal, discoveries and memories. It cannot be undone unless you have a separate backup. Your local browser backup will be kept.'))return;
+ try{
+   const r=await api('/api/import',{method:'POST',body:old});
+   if(!r.ok){
+     const error=await r.json().catch(()=>({}));
+     throw Error(error.detail||'Brain rejected the import.');
+   }
+   localStorage.setItem(IMPORTED_KEY,config.url);
+   updateMigrationButton();
+   await sync();
+   toast('Your saved world has been copied into the brain.');
+ }catch(e){toast(e.message||'Unable to transfer the world. Your browser backup is safe.')}
+});
 $('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='little-wanderer-memories.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
 $('import').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>2000000)throw Error('Too large');const val=JSON.parse(await file.text());if(!val||val.version!==1||!val.stats||!Array.isArray(val.messages))throw Error('Unsupported save');state={...makeWorld(),...val,lastTick:now()};if(!['meadow','grove','cottage'].includes(state.location))state.location='meadow';uiNight=state.night===true;save();render();toast('Memories restored!')}catch{toast('Could not read that save file.')}e.target.value=''});
 $('reset').addEventListener('click',()=>{if(!confirm('Start a new little world? This clears this browser\'s pet memories. Export first if you wish to keep them.'))return;state=makeWorld();state.night=uiNight;save();render()});
 $('backendUrl').value=config.url||'';$('backendToken').value=config.token||'';
-if(config.url&&config.token){$('connectionLabel').textContent='Connecting to my brain...';sync()}else applyTime();
+if(config.url&&config.token){preserveBrowserSave();$('connectionLabel').textContent='Connecting to my brain...';sync()}else applyTime();
+updateMigrationButton();
 render();save();
 setInterval(()=>{if(config.url&&config.token){sync();return}if(now()>=state.nextAction)act();deliver();if(now()>=state.nextResearch)lookupResearch();state.stats.hunger=clamp(state.stats.hunger-.025);state.stats.energy=clamp(state.stats.energy-(state.location==='cottage'?-.02:.018));state.stats.joy=clamp(state.stats.joy-.008);state.stats.social=clamp(state.stats.social-.011);save();updateStats()},5000);
 window.addEventListener('beforeunload',save);
