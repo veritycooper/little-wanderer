@@ -5,7 +5,7 @@ const DATA_KEY='little-wanderer-v1',CONFIG_KEY='little-wanderer-config',THEME_KE
 const topics=['wildflowers','the moon','butterflies','forests','mushrooms','stars','birds','oceans','bees','clouds','foxes','seashells'];
 const statMeta=[['hunger','▤','Full tummy'],['energy','☾','Energy'],['social','✉','Social'],['joy','✧','Happiness'],['curiosity','✦','Curiosity']];
 const safeText=s=>String(s||'').slice(0,2000);
-const makeWorld=()=>({version:1,name:'Pip',created:now(),lastTick:now(),stats:{hunger:78,energy:81,social:74,joy:84,curiosity:68},skills:{exploring:3,reading:2,friendship:4,gardening:1},interests:Object.fromEntries(topics.map((t,i)=>[t,i<4?2:1])),location:'meadow',lastOutdoor:'meadow',room:'study',activity:'Admiring the flowers',x:57,y:64,night:false,messages:[{id:'hello',from:'pet',text:"Oh! Hello there. I'm Pip. I found a cosy cottage and some very interesting flowers. Do you think we could be friends?",at:now()}],journal:[{id:'first',at:now(),title:'A new beginning',text:"Today I arrived in a little meadow. There's a cottage, a pond, and enough curiosity to fill a whole library. I wonder who I'll meet?"}],discoveries:[],pending:[],nextAction:now()+65000,nextResearch:now()+1000*60*12,unread:false,memories:[],decisions:[],plan:{action:'explore',reason:'I want to discover something new.'}});
+const makeWorld=()=>({version:1,name:'Pip',created:now(),lastTick:now(),stats:{hunger:78,energy:81,social:74,joy:84,curiosity:68},skills:{exploring:3,reading:2,friendship:4,gardening:1},interests:Object.fromEntries(topics.map((t,i)=>[t,i<4?2:1])),location:'meadow',lastOutdoor:'meadow',room:'living',pendingResearch:null,activity:'Admiring the flowers',x:57,y:64,night:false,messages:[{id:'hello',from:'pet',text:"Oh! Hello there. I'm Pip. I found a cosy cottage and some very interesting flowers. Do you think we could be friends?",at:now()}],journal:[{id:'first',at:now(),title:'A new beginning',text:"Today I arrived in a little meadow. There's a cottage, a pond, and enough curiosity to fill a whole library. I wonder who I'll meet?"}],discoveries:[],pending:[],nextAction:now()+65000,nextResearch:now()+1000*60*12,unread:false,memories:[],decisions:[],plan:{action:'explore',reason:'I want to discover something new.'}});
 let state;try{state={...makeWorld(),...JSON.parse(localStorage.getItem(DATA_KEY))};}catch{state=makeWorld()}
 let config;try{config=JSON.parse(localStorage.getItem(CONFIG_KEY))||{};}catch{config={}}
 const preserveBrowserSave=()=>{try{if(!localStorage.getItem(BACKUP_KEY))localStorage.setItem(BACKUP_KEY,JSON.stringify(state));}catch{toast('Unable to preserve a browser backup. Please export your memories first.');}};
@@ -26,12 +26,43 @@ $('petTitle').textContent=state.name+' ♡';const m=mood();$('mood').textContent
 for(const [k,,title] of statMeta){const wrap=document.createElement('div');const label=document.createElement('label');label.textContent=title;label.htmlFor='range-'+k;const input=document.createElement('input');input.type='range';input.id='range-'+k;input.min=0;input.max=100;input.dataset.slider=k;input.addEventListener('input',()=>{state.stats[k]=Number(input.value);updateStats();save()});input.addEventListener('change',async()=>{if(config.url&&config.token){try{const r=await api('/api/stats',{method:'POST',body:JSON.stringify({stat:k,value:Number(input.value)})});if(!r.ok)throw Error();await sync()}catch{toast('Unable to update this need on the brain server.')}}});wrap.append(label,input);$('sliders').append(wrap)}
 function renderMessages(){const el=$('messages');el.replaceChildren();for(const m of (state.messages||[]).slice(-80)){const div=document.createElement('div');div.className='msg'+(m.from==='you'?' mine':'');const body=document.createElement('div');body.textContent=m.text;const time=document.createElement('time');time.textContent=date(m.at);div.append(body,time);el.append(div)}el.scrollTop=el.scrollHeight}
 function renderJournal(){const el=$('journal');el.replaceChildren();for(const e of state.journal.slice(0,70)){const box=document.createElement('article');box.className='journal-entry';const t=document.createElement('time');t.textContent=date(e.at);const h=document.createElement('h4');h.textContent=e.title;const p=document.createElement('p');p.textContent=e.text;box.append(t,h,p);el.append(box)}}
-function renderDiscoveries(){const el=$('discoveries');el.replaceChildren();if(!state.discoveries.length){const p=document.createElement('p');p.className='muted';p.textContent='No discoveries just yet. I wonder what the first one will be?';el.append(p)}for(const d of state.discoveries.slice(0,40)){const box=document.createElement('article');box.className='discovery';const h=document.createElement('h4');h.textContent='✦ '+d.title;const p=document.createElement('p');p.textContent=d.summary;box.append(h,p);if(d.url&&/^https:\/\/[a-z-]+\.wikipedia\.org\/wiki\//.test(d.url)){const a=document.createElement('a');a.href=d.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Read the source ↗';box.append(a)}el.append(box)}}
+function renderDiscoveries(){
+ const el=$('discoveries');el.replaceChildren();
+ if(!state.discoveries?.length){
+   const p=document.createElement('p');p.className='muted';
+   p.textContent='No discoveries just yet. When Pip has a question, you can decide whether to let her look it up.';
+   el.append(p);
+ }
+ for(const d of (state.discoveries||[]).slice(0,40)){
+   const box=document.createElement('article');box.className='discovery';
+   const h=document.createElement('h4');h.textContent='✦ '+(d.topic||d.title);
+   box.append(h);
+   if(d.question){
+     const q=document.createElement('p');q.className='discovery-question';
+     q.textContent='I wondered: '+d.question;box.append(q);
+   }
+   if(d.summary){
+     const p=document.createElement('p');
+     p.textContent='What I found: '+String(d.summary).slice(0,200).replace(/\s+\S*$/,'')+'…';
+     box.append(p);
+   }
+   if(d.thought){
+     const thought=document.createElement('p');
+     thought.className='discovery-thought';thought.textContent='✧ '+d.thought;
+     box.append(thought);
+   }
+   if(d.url&&/^https:\/\/[a-z-]+\.wikipedia\.org\/wiki\//.test(d.url)){
+     const link=document.createElement('a');link.href=d.url;link.target='_blank';
+     link.rel='noopener noreferrer';link.textContent='Where I read it ↗';box.append(link);
+   }
+   el.append(box);
+ }
+}
 function renderInterests(){$('interests').replaceChildren();Object.entries(state.interests||{}).sort((a,b)=>b[1]-a[1]).slice(0,6).forEach(([name])=>{const chip=document.createElement('span');chip.className='chip';chip.textContent='✿ '+name;$('interests').append(chip)})}
 function renderSkills(){$('skills').replaceChildren();for(const [name,val] of Object.entries(state.skills)){const r=document.createElement('div');r.className='skill';const label=document.createElement('span');label.textContent=name[0].toUpperCase()+name.slice(1);const bar=document.createElement('div');bar.className='bar';const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=val+'%';bar.append(fill);const n=document.createElement('b');n.textContent=val+' xp';r.append(label,bar,n);$('skills').append(r)}}
 function renderWorld(){
  const isHome=state.location==='cottage';
- const room=state.room==='kitchen'?'kitchen':'study';
+ const room=['living','study','kitchen'].includes(state.room)?state.room:'living';
  $('roomControls').hidden=!isHome;
  $('computerInteract').hidden=!isHome||room!=='study';
  for(const button of document.querySelectorAll('[data-room]')){
@@ -45,9 +76,9 @@ function renderWorld(){
  $('outside').hidden=!isHome;
  $('cottage').hidden=isHome||zone==='grove';
  $('location').textContent=isHome?'Inside the cottage':zone==='grove'?'Exploring the woodland':'Wandering outside';
- $('worldHeading').textContent=isHome?(room==='kitchen'?'Cottage Kitchen':'Little Cottage Study'):zone==='grove'?'Whispering Woods':'Rosewood Meadow';
+ $('worldHeading').textContent=isHome?(room==='kitchen'?'Cottage Kitchen':room==='study'?'Pip’s Little Study':'Cottage Living Room'):zone==='grove'?'Whispering Woods':'Rosewood Meadow';
  $('activity').textContent=state.activity;
- $('worldNote').textContent=isHome?(room==='kitchen'?'Something lovely is cooking in Pip’s little kitchen.':'A cosy place to write letters and research new curiosities.'):zone==='grove'?'A broader stream curves beneath the bridge and the path carries on.':'Berry bushes and a tiny mailbox by the cottage.';
+ $('worldNote').textContent=isHome?(room==='kitchen'?'A little breakfast nook for snacks and berry picking.':room==='study'?'A quiet room for questions, writing letters and the computer.':'A place to rest by the fireplace.'):zone==='grove'?'A broad stream runs beneath the bridge and the forest path continues.':'A little garden, berry bushes and a mailbox outside the cottage.';
  $('visitButton').textContent=isHome?'Return outside ↗':zone==='grove'?'Head to the meadow ↗':'Visit the cottage ↗';
  for(const button of document.querySelectorAll('[data-scene]')){
    const selected=(isHome?state.lastOutdoor||'meadow':state.location)===button.dataset.scene;
@@ -59,7 +90,7 @@ function renderWorld(){
 }
 function renderMemories(){const host=$('memoryNotes');host.replaceChildren();for(const [i,item] of (state.memories||[]).entries()){const row=document.createElement('div');row.className='memory-row';const t=document.createElement('span');t.textContent=typeof item==='string'?item:item.text||'';const b=document.createElement('button');b.type='button';b.textContent='×';b.title='Forget this';b.setAttribute('aria-label','Forget memory');b.addEventListener('click',async()=>{if(config.url&&config.token){try{const response=await api('/api/memories/'+i,{method:'DELETE'});if(!response.ok)throw Error();await sync();return}catch{return toast('Unable to forget while brain server is connected.')}}state.memories.splice(i,1);save();renderMemories()});row.append(t,b);host.append(row)}if(!state.memories?.length){const p=document.createElement('p');p.className='tiny';p.textContent='A fresh shelf, ready for little things worth remembering.';host.append(p)}}
 function renderDecisions(){const el=$('decisions');el.replaceChildren();for(const d of (state.decisions||[]).slice(0,45)){const row=document.createElement('article');row.className='journal-entry';const time=document.createElement('time');time.textContent=date(d.at);const h=document.createElement('h4');h.textContent=d.action;const p=document.createElement('p');p.textContent=d.reason;row.append(time,h,p);el.append(row)}if(!state.decisions?.length)el.textContent='My first decisions will appear here soon.';const plan=state.plan||{action:'explore',reason:'I feel curious.'};$('nextPlan').textContent=plan.action;$('planReason').textContent=plan.reason}
-function render(){updateStats();renderMemories();renderDecisions();renderWorld();renderInterests();renderSkills();renderMessages();renderJournal();renderDiscoveries();$('petName').value=state.name;$('typing').textContent=state.pending.length?state.name+' has a letter to think about...':'✿ '+state.name+' is enjoying a quiet moment.';$('unread').hidden=!state.unread}
+function render(){renderResearchPermission();updateStats();renderMemories();renderDecisions();renderWorld();renderInterests();renderSkills();renderMessages();renderJournal();renderDiscoveries();$('petName').value=state.name;$('typing').textContent=state.pending.length?state.name+' has a letter to think about...':'✿ '+state.name+' is enjoying a quiet moment.';$('unread').hidden=!state.unread}
 const move=()=>{const oldX=Number(state.x)||57,oldY=Number(state.y)||64;state.x=Math.max(10,Math.min(79,oldX+(Math.random()-.5)*30));state.y=Math.max(53,Math.min(76,oldY+(Math.random()-.5)*17))};
 function act(force){const s=state.stats;let action=force||'wander';if(!force){if(s.energy<24)action='rest';else if(s.hunger<25)action='feed';else if(s.social<30)action='reflect';else if(s.curiosity<35)action='read';else action=rand(['wander','wander','garden','explore','reflect','read','rest']);}
 const notes={wander:['Walking through the meadow','The air smells like wildflowers','A little stroll clears my head'],garden:['Checking the little seedlings','I think the garden looks happier today'],explore:['Investigating something shiny','I saw a curious little bug'],reflect:['Thinking about my day','I wonder what you are doing'],read:['Reading under a tree','Learning something new'],rest:['A well-earned little nap','Resting in my cottage'],feed:['Having something tasty','A snack sounds lovely'],play:['Chasing a fluttering leaf','Playing in the grass']};
@@ -129,9 +160,109 @@ function response(input){
 }
 function sendMessage(){const field=$('message');const text=field.value.trim();if(!text)return;if(text.length>500)return toast('That letter is a little too long.');field.value='';state.messages.push({id:crypto.randomUUID(),from:'you',text,at:now()});state.stats.social=clamp(state.stats.social+9);skill('friendship',2);state.pending.push({id:crypto.randomUUID(),text,due:now()+20000+Math.random()*55000});window.PixelWorld?.letterSent();journal('A letter arrived','You wrote to me today. I want to take a moment to think before I reply.');save();render();}
 function deliver(){if(!state.pending.length)return;const due=state.pending.filter(p=>p.due<=now());state.pending=state.pending.filter(p=>p.due>now());for(const p of due){state.messages.push({id:crypto.randomUUID(),from:'pet',text:response(p.text),at:now()});state.stats.social=clamp(state.stats.social+13);say('A letter for you!');state.unread=true;}if(due.length){save();renderMessages();$('typing').textContent=state.name+' has written back!';$('unread').hidden=false}}
+const LOCAL_QUESTIONS={
+ mushrooms:["Why do mushrooms appear so quickly after rain?","mushroom","I like that most of the mushroom stays hidden below the ground."],
+ butterflies:["How do butterflies find the flowers they like?","butterfly","I keep watching them land on different flowers."],
+ wildflowers:["Why do some flowers open only at certain times?","flower","It feels like every flower keeps a different schedule."],
+ "the moon":["What makes the Moon change shape?","lunar phase","Sometimes I see it even when the sky is blue."],
+ forests:["How are trees connected underground?","mycorrhizal network","I wonder what is happening beneath the roots."],
+ stars:["Why do stars seem to twinkle?","scintillation astronomy","I like sitting outside and looking up."],
+ birds:["How do birds find their way home after migrating?","bird migration","There must be so many journeys above my cottage."]
+};
+function localCuriosity(){
+ const subject=topic();
+ const [question,searchTerm,thought]=LOCAL_QUESTIONS[subject]||[
+   'What makes '+subject+' so interesting?',subject,
+   "I'd like to notice something small that I have overlooked."
+ ];
+ return {id:crypto.randomUUID(),topic:subject,question,searchTerm,thought,at:now()};
+}
+function renderResearchPermission(){
+ const proposal=state.pendingResearch;
+ $('researchProposal').hidden=!proposal;
+ $('research').textContent=proposal?'Pip has a question for you ✧':'Ask what Pip is curious about ↗';
+ if(proposal){
+   $('researchQuestion').textContent=proposal.question;
+   $('researchInterest').textContent='On my mind: '+proposal.topic;
+   $('researchStatus').textContent='Pip is curious, but is waiting for your permission to search.';
+ }else{
+   $('researchStatus').textContent=state.discoveries?.length?
+     'Last explored: '+state.discoveries[0].topic:
+     'Pip can daydream freely, but asks before searching for anything.';
+ }
+}
 let busy=false;
-async function lookupResearch(){if(busy)return;busy=true;const interest=topic();$('researchStatus').textContent=state.name+' is researching '+interest+'...';say('I wonder...');try{let data;if(config.url&&config.token){const r=await api('/api/research',{method:'POST',body:JSON.stringify({topic:interest})});if(!r.ok)throw Error('Brain research unavailable');data=await r.json()}else{const search=await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent(interest)+'&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&format=json&origin=*');if(!search.ok)throw Error('Research unavailable');const json=await search.json();const page=Object.values(json.query?.pages||{})[0];if(!page||!page.extract)throw Error('No article');data={title:page.title,summary:page.extract.slice(0,550),url:'https://en.wikipedia.org/wiki/'+encodeURIComponent(page.title.replaceAll(' ','_'))};}
-if(!state.discoveries.some(d=>d.url===data.url)){state.discoveries.unshift({...data,at:now(),topic:interest});journal('Something I learned about '+interest,'I read about '+data.title+'. '+data.summary.slice(0,180));state.interests[interest]=Math.min(8,(state.interests[interest]||1)+1);skill('reading',5);state.stats.curiosity=clamp(state.stats.curiosity+16);say('I found something!')}else say('I remember this one!');$('researchStatus').textContent='Last explored: '+data.title;}catch(e){$('researchStatus').textContent='The library is quiet right now. I can try again later.';journal('A research attempt','I tried to explore '+interest+', but could not reach a source this time. I will try again.');}finally{state.nextResearch=now()+1000*60*(12+Math.floor(Math.random()*18));busy=false;save();render();}}
+async function proposeResearch(){
+ if(busy)return;
+ if(state.pendingResearch){renderResearchPermission();$('researchProposal').scrollIntoView({behavior:'smooth',block:'nearest'});return;}
+ busy=true;
+ try{
+   if(config.url&&config.token){
+     const response=await api('/api/research/propose',{method:'POST',body:'{}'});
+     if(!response.ok)throw Error('Unable to ask Pip for a question.');
+     await sync();
+   }else{
+     state.pendingResearch=localCuriosity();
+     state.plan={action:'Ask before searching',reason:state.pendingResearch.question};
+     save();render();
+   }
+   say('May I look something up?');
+   $('researchProposal').scrollIntoView({behavior:'smooth',block:'nearest'});
+ }catch{toast('Pip could not prepare a question yet. The brain might still be updating.')}
+ finally{busy=false;}
+}
+async function decideResearch(approve){
+ if(busy||!state.pendingResearch)return;
+ busy=true;
+ const idea=state.pendingResearch;
+ $('approveResearch').disabled=true;$('declineResearch').disabled=true;
+ try{
+   if(config.url&&config.token){
+     const response=await api('/api/research/decision',{method:'POST',
+       body:JSON.stringify({id:idea.id,approve})});
+     if(!response.ok){
+       const err=await response.json().catch(()=>({}));
+       throw Error(err.detail||'Research could not finish.');
+     }
+     await sync();
+   }else if(!approve){
+     state.pendingResearch=null;
+     state.nextResearch=now()+4*3600000;
+     state.plan={action:'Daydream some more',reason:'Perhaps another question another day.'};
+     save();render();
+   }else{
+     const endpoint='https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch='+
+       encodeURIComponent(idea.searchTerm)+'&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&format=json&origin=*';
+     const response=await fetch(endpoint);
+     if(!response.ok)throw Error('The library could not be reached.');
+     const data=await response.json();
+     const page=Object.values(data.query?.pages||{}).find(p=>p.extract);
+     if(!page)throw Error('Pip could not find a reliable article.');
+     const url='https://en.wikipedia.org/wiki/'+encodeURIComponent(page.title.replaceAll(' ','_'));
+     const entry={title:page.title,topic:idea.topic,question:idea.question,
+       thought:idea.thought,summary:String(page.extract).slice(0,210),url,at:now()};
+     if(!state.discoveries.some(d=>d.url===url)){
+       state.discoveries.unshift(entry);
+       state.interests[idea.topic]=Math.min(8,(state.interests[idea.topic]||1)+1);
+       state.stats.curiosity=clamp(state.stats.curiosity+12);
+       skill('reading',4);
+       journal('A question about '+idea.topic,'I wondered: '+idea.question+' I found a source about '+page.title+'.');
+     }
+     state.pendingResearch=null;
+     state.location='cottage';state.room='study';
+     state.activity='Writing a short note about '+idea.topic;
+     state.nextResearch=now()+8*3600000;
+     save();render();
+   }
+   toast(approve?'Pip has explored the question and added a short discovery.':'Pip will leave that question for another time.');
+   say(approve?'I found something!':'Another time, perhaps.');
+ }catch(err){
+   toast(err?.message||'The library is quiet right now; please try again.');
+   if(config.url&&config.token)await sync();
+ }finally{
+   busy=false;$('approveResearch').disabled=false;$('declineResearch').disabled=false;
+ }
+}
 const api=(route,options={})=>fetch(config.url.replace(/\/$/,'')+route,{...options,headers:{'Content-Type':'application/json','Authorization':'Bearer '+config.token,...options.headers},signal:AbortSignal.timeout(12000)});
 async function connect(){
  const url=$('backendUrl').value.trim().replace(/\/$/,'');
@@ -189,7 +320,7 @@ let syncLock=false;
 async function sync(){if(!config.url||!config.token||syncLock)return;syncLock=true;try{const r=await api('/api/state');if(!r.ok)throw Error('Server unavailable');const server=await r.json();
  const beforeLetters=(state.messages||[]).filter(m=>m.from==='pet').at(-1)?.id;
  Object.assign(state,server);
- if(!['study','kitchen'].includes(state.room))state.room='study';
+ if(!['living','study','kitchen'].includes(state.room))state.room='living';
  state.night=uiNight;
  if(beforeLetters&&state.messages?.filter(m=>m.from==='pet').at(-1)?.id!==beforeLetters){
    window.PixelWorld?.letterSent();
@@ -217,13 +348,15 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>swit
 $('memoryForm').addEventListener('submit',async e=>{e.preventDefault();const input=$('memoryInput');const memory=input.value.trim();if(!memory)return;if(config.url&&config.token){try{const response=await api('/api/memories',{method:'POST',body:JSON.stringify({text:memory})});if(!response.ok)throw Error();input.value='';await sync();return}catch{return toast('Unable to save memory to brain server.')}}state.memories=state.memories||[];if(state.memories.length>=30)return toast('The memory shelf is full.');if(!state.memories.includes(memory))state.memories.push(memory);input.value='';save();renderMemories()});
 document.querySelectorAll('[data-care]').forEach(b=>b.addEventListener('click',async()=>{const action=b.dataset.care;if(action==='talk'){switchTab('chat');$('message').focus();return}if(config.url&&config.token){try{const r=await api('/api/care',{method:'POST',body:JSON.stringify({action})});if(r.ok){await sync();return}}catch{}}act(action==='rest'?'rest':action==='feed'?'feed':'play');say(action==='feed'?'Yum, thank you!':action==='rest'?'Time for a nap!':'Hehe!');save();render()}));
 $('chatForm').addEventListener('submit',async e=>{e.preventDefault();if(config.url&&config.token){const value=$('message').value.trim();if(!value)return;try{const r=await api('/api/message',{method:'POST',body:JSON.stringify({text:value})});if(!r.ok)throw Error();$('message').value='';window.PixelWorld?.letterSent();await sync();return}catch{return toast('The brain is offline. Reconnect or switch to browser mode.')}}sendMessage()});
-$('research').addEventListener('click',lookupResearch);
+$('research').addEventListener('click',proposeResearch);
+$('approveResearch').addEventListener('click',()=>decideResearch(true));
+$('declineResearch').addEventListener('click',()=>decideResearch(false));
 $('petInteract').addEventListener('click',()=>document.querySelector('[data-care="play"]').click());
 async function goTo(location,x=state.x||57,y=state.y||70,room=state.room||'study'){
  if(!['meadow','grove','cottage'].includes(location))return;
  x=Math.max(10,Math.min(150,Number(x)||57));
  y=Math.max(50,Math.min(79,Number(y)||70));
- room=room==='kitchen'?'kitchen':'study';
+ room=['living','study','kitchen'].includes(room)?room:'living';
  if(config.url&&config.token){
    try{
      const r=await api('/api/travel',{method:'POST',
@@ -242,13 +375,13 @@ async function goTo(location,x=state.x||57,y=state.y||70,room=state.room||'study
      state.x=x;state.y=y;
    }
    state.activity=location==='cottage'
-     ?room==='kitchen'?'Making something in the kitchen':'Reading and writing in the study'
+     ?room==='kitchen'?'Making something in the kitchen':room==='study'?'Reading and writing in the study':'Resting in the living room'
      :location==='grove'?'Wandering through the woodland':'Exploring the meadow';
    render();save();
  }
 }
 function visitScene(scene){
- if(scene==='cottage')return goTo('cottage',state.x,state.y,'study');
+ if(scene==='cottage')return goTo('cottage',state.x,state.y,'living');
  return goTo(scene,57,73);
 }
 document.querySelectorAll('[data-scene]').forEach(button=>button.addEventListener('click',()=>visitScene(button.dataset.scene)));
@@ -256,8 +389,8 @@ $('cottage').addEventListener('click',()=>visitScene('cottage'));
 document.querySelectorAll('[data-room]').forEach(button=>
  button.addEventListener('click',()=>goTo('cottage',state.x,state.y,button.dataset.room)));
 $('computerInteract').addEventListener('click',()=>{
- say('Time to look something up!');
- lookupResearch();
+ say('I have a question in mind...');
+ proposeResearch();
 });
 $('berryInteract').addEventListener('click',async()=>{
  if(config.url&&config.token){
@@ -348,6 +481,6 @@ $('backendUrl').value=config.url||'';$('backendToken').value=config.token||'';
 if(config.url&&config.token){preserveBrowserSave();$('connectionLabel').textContent='Connecting to my brain...';sync()}else applyTime();
 updateMigrationButton();
 render();save();
-setInterval(()=>{if(config.url&&config.token){sync();return}if(now()>=state.nextAction)act();deliver();if(now()>=state.nextResearch)lookupResearch();state.stats.hunger=clamp(state.stats.hunger-.025);state.stats.energy=clamp(state.stats.energy-(state.location==='cottage'?-.02:.018));state.stats.joy=clamp(state.stats.joy-.008);state.stats.social=clamp(state.stats.social-.011);save();updateStats()},5000);
+setInterval(()=>{if(config.url&&config.token){sync();return}if(now()>=state.nextAction)act();deliver();if(now()>=state.nextResearch&&!state.pendingResearch){state.pendingResearch=localCuriosity();state.nextResearch=now()+8*3600000;renderResearchPermission();save();}state.stats.hunger=clamp(state.stats.hunger-.025);state.stats.energy=clamp(state.stats.energy-(state.location==='cottage'?-.02:.018));state.stats.joy=clamp(state.stats.joy-.008);state.stats.social=clamp(state.stats.social-.011);save();updateStats()},5000);
 window.addEventListener('beforeunload',save);
 })();
