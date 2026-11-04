@@ -665,14 +665,14 @@
     moveHitboxes();
     if(!motion.matches)requestAnimationFrame(render);
   }
-  function placeOverlay(id,x,y,width=28,height=30){
+  function placeOverlay(id,x,y,width=28,height=30,area='meadow'){
     const b=document.getElementById(id);
     if(!b)return;
     b.style.left=((x-camera)/W*100)+'%';
     b.style.top=((y-16)/H*100)+'%';
     b.style.width=(width/W*100)+'%';
     b.style.height=(height/H*100)+'%';
-    b.hidden=state.location!=='meadow';
+    b.hidden=state.location!==area;
   }
   function moveHitboxes(){
     const b=document.getElementById('petInteract');
@@ -686,6 +686,7 @@
       bubble.style.bottom=Math.max(17,Math.min(67,(H-y+40)/H*100))+'%';
     }
     placeOverlay('mailboxInteract',237,179,37,51);
+    placeOverlay('berryInteract',state.location==='grove'?482:461,state.location==='grove'?175:189,43,51,state.location);
     const cottage=document.getElementById('cottage');
     if(cottage&&state.location==='meadow'){
       cottage.style.left=((55-camera)/W*100)+'%';
