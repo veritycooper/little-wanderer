@@ -15,7 +15,7 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "little-wanderer-db"
-database_id = "REPLACE_WITH_YOUR_CLOUDFLARE_D1_DATABASE_UUID"
+database_id = "785cc0e3-9b31-4b97-a77b-f6275525c761"
 migrations_dir = "migrations"
 
 [triggers]
