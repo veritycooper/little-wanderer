@@ -686,7 +686,7 @@
       bubble.style.bottom=Math.max(17,Math.min(67,(H-y+40)/H*100))+'%';
     }
     placeOverlay('mailboxInteract',237,179,37,51);
-    placeOverlay('berryInteract',state.location==='grove'?482:461,state.location==='grove'?175:189,43,51,state.location);
+    placeOverlay('berryInteract',state.location==='grove'?482:461,state.location==='grove'?175:189,43,51,state.location==='grove'?'grove':'meadow');
     const cottage=document.getElementById('cottage');
     if(cottage&&state.location==='meadow'){
       cottage.style.left=((55-camera)/W*100)+'%';
