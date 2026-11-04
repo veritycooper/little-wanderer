@@ -79,6 +79,35 @@ backend/Dockerfile          Container deployment option
 ```
 
 
+## Explorable world and cottage rooms
+
+The meadow and Whispering Woods now stretch beyond the visible canvas. The
+camera follows Pip smoothly as it walks, while the **Wander left/right**
+buttons and clicks on safe outdoor ground set a new destination. Woodland
+crossings follow the bridge instead of wading through the stream.
+
+- The cottage's redesigned roof sits in a continuous silhouette.
+- Bushes are grounded in the grass; some are berry bushes you can click to
+  forage for food and a journal entry, with a two-minute cooldown.
+- The woodland stream is wider, runs off the lower edge, passes beneath the
+  bridge and has stones and reeds along the banks.
+- The stepping-stone path continues across the whole woodland area.
+- The cottage now has a **study with a working computer hotspot** and a
+  **separate kitchen** with cupboards, sink, hob, table and berry bowl.
+- Pip automatically uses the kitchen when feeding and the study when reading.
+  Clicking the computer asks Pip to research a topic.
+- The meadow has a **little mailbox** with a flag and envelope indicator when
+  a letter is waiting. Clicking it opens the Letters archive.
+- Clicking the kitchen/study buttons, outdoor ground or roam buttons saves the
+  location to Cloudflare when the cloud brain is connected, using authenticated
+  travel endpoints. Browser-only mode retains local functionality.
+
+Existing browser saves and Cloudflare D1 worlds use the same version-1 schema,
+with an optional \`room\` field. Old saves still load and default to the study;
+you do not need to reset Pip. The optional legacy Python backend remains a
+separate alternative and does not implement the newer Cloudflare-only interactive
+travel and berry-foraging endpoints.
+
 ## Free cloud brain (Cloudflare)
 
 The project now includes an alternative **Cloudflare Workers + D1 + Workers AI** brain in the **cloudflare/** folder.
