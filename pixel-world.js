@@ -5,7 +5,7 @@
   if(!canvas) return;
   const ctx=canvas.getContext('2d',{alpha:false});
   if(!ctx) return;
-  const W=400,H=250;
+  const W=400,H=250,WORLD_W=660;
   const transitionCanvas=document.createElement('canvas');
   transitionCanvas.width=W;transitionCanvas.height=H;
   const transitionCtx=transitionCanvas.getContext('2d');
@@ -44,26 +44,36 @@
   function oval(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill()}
   function shapeOutline(x,y,w,h,c,inner,pad=2){r(x,y,w,h,c);r(x+pad,y+pad,w-pad*2,h-pad*2,inner)}
   function sky(p,t){
-    const g=ctx.createLinearGradient(0,0,0,170);g.addColorStop(0,p.sky);g.addColorStop(1,p.skyLow);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    const g=ctx.createLinearGradient(0,0,0,170);
+    g.addColorStop(0,p.sky);g.addColorStop(1,p.skyLow);
+    ctx.fillStyle=g;ctx.fillRect(0,0,WORLD_W,H);
     if(p.night){
-      r(322,24,22,24,p.sun);r(327,19,12,31,p.sun);r(340,25,10,19,p.sky);
-      for(let i=0;i<37;i++){const x=hash(i,17)*390+5,y=hash(i,33)*123+3;const shine=hash(i,45)>.5;if(shine||Math.sin(t*.0009+i)>-.25)r(x,y,i%7?2:3,i%7?2:3,i%4?p.sun:'#d8d4fa')}
+      r(324,24,22,24,p.sun);r(329,19,12,31,p.sun);r(341,25,10,19,p.sky);
+      for(let i=0;i<58;i++){
+        const x=hash(i,17)*(WORLD_W-10)+5,y=hash(i,33)*123+3;
+        if(hash(i,45)>.5||Math.sin(t*.0009+i)>-.25)r(x,y,i%7?2:3,i%7?2:3,i%4?p.sun:'#d8d4fa');
+      }
     }else{
       r(324,25,25,25,p.sun);r(319,31,35,13,p.sun);r(330,19,13,36,p.sun);
     }
-    cloud((t*.0014+12)%495-90,27,1.05,p.cloud);
-    cloud((t*.00085+240)%520-100,74,.6,p.cloud);
+    cloud((t*.0014+12)%720-90,27,1.05,p.cloud);
+    cloud((t*.00085+240)%780-100,74,.6,p.cloud);
+    cloud((t*.001+510)%760-90,48,.74,p.cloud);
   }
   function cloud(x,y,scale,c){
     ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(scale,scale);
     r(12,0,27,7,c);r(4,7,47,9,c);r(0,16,59,9,c);r(12,25,37,4,c);ctx.restore();
   }
   function land(p,grove=false){
-    polygon([[0,136],[36,119],[83,127],[131,110],[187,128],[233,117],[298,133],[348,113],[400,126],[400,250],[0,250]],p.hillFar);
-    polygon([[0,160],[62,141],[118,155],[180,132],[249,156],[311,140],[400,154],[400,250],[0,250]],p.hill);
-    r(0,160,400,90,p.grass);r(0,204,400,46,p.grassDeep);
-    for(let i=0;i<78;i++){
-      const x=Math.floor(hash(i,3)*396),y=Math.floor(166+hash(i,8)*83);
+    polygon([[0,136],[36,119],[83,127],[131,110],[187,128],[233,117],
+      [298,133],[348,113],[400,126],[454,108],[509,127],[557,116],
+      [606,134],[660,117],[660,250],[0,250]],p.hillFar);
+    polygon([[0,160],[62,141],[118,155],[180,132],[249,156],
+      [311,140],[400,154],[477,133],[555,155],[621,137],
+      [660,150],[660,250],[0,250]],p.hill);
+    r(0,160,WORLD_W,90,p.grass);r(0,204,WORLD_W,46,p.grassDeep);
+    for(let i=0;i<112;i++){
+      const x=Math.floor(hash(i,3)*(WORLD_W-4)),y=Math.floor(166+hash(i,8)*83);
       r(x,y,4+(i%3)*2,2,grove?p.grassShade:p.grassDeep);
       if(i%3===0){r(x+2,y-4,2,5,p.leaf3);r(x-2,y-1,3,3,p.leaf)}
     }
@@ -124,65 +134,112 @@
     r(x,y-9,2,10,p.leafDark);r(x-3,y-5,4,3,p.leaf);
     r(x-4,y-14,4,4,c);r(x+2,y-14,4,4,c);r(x-1,y-18,4,5,c);r(x-1,y-12,4,4,p.flower2);
   }
+  function shrub(p,x,y,w,berries=false){
+    const left=x-Math.floor(w/2);
+    // The silhouette begins at the dirt and grows upwards rather than floating.
+    oval(x,y+1,Math.ceil(w*.64),4,p.grassShade);
+    r(left-5,y-10,w+10,13,p.leafDark);
+    r(left,y-16,w,15,p.leaf);
+    r(left+4,y-21,w-8,11,p.leaf2);
+    r(left-8,y-12,13,11,p.leaf2);
+    r(left+w-4,y-13,12,11,p.leaf);
+    r(left+10,y-26,Math.max(12,w-20),8,p.leaf3);
+    r(left+2,y-17,9,6,p.leaf3);
+    r(left+w-14,y-20,11,7,p.leaf3);
+    r(left+w-10,y-4,7,4,p.leafDark);
+    if(berries){
+      // Rosy and crimson berries; distinct from ordinary green shrubs.
+      const colours=['#c95b6d','#e99491','#a64565','#e6b6c6'];
+      for(const [i,dx,dy] of [[0,-11,-12],[1,-1,-17],[2,10,-12],
+        [3,-17,-7],[4,15,-6],[5,3,-8]]){
+        r(x+dx,y+dy,4,4,colours[i%colours.length]);
+        r(x+dx+1,y+dy,1,1,p.glow);
+      }
+    }
+    // Little tufts of grass at the roots for a coherent ground contact.
+    r(left-5,y+1,8,4,p.grassDeep);
+    r(left+w-3,y+1,8,4,p.grassDeep);
+  }
   function bushes(p,area){
     const clusters=area==='grove'
-      ? [[46,201,32],[113,183,29],[251,185,35],[385,201,27]]
-      : [[22,177,28],[196,170,30],[385,172,27]];
-    for(const [x,y,w] of clusters){
-      // Every bush has a ground shadow and an irregular, connected silhouette.
-      const left=x-Math.floor(w/2);
-      oval(x,y+1,w*.65,4,p.grassShade);
-      r(left,y-9,w,12,p.leafDark);
-      r(left-5,y-10,12,10,p.leafDark);
-      r(left+w-6,y-11,12,10,p.leafDark);
-      r(left+4,y-17,w-8,12,p.leaf);
-      r(left-3,y-13,15,10,p.leaf);
-      r(left+w-12,y-15,16,10,p.leaf2);
-      r(left+9,y-22,Math.max(12,w-17),9,p.leaf2);
-      r(left+3,y-12,10,6,p.leaf3);
-      r(left+w-16,y-17,11,6,p.leaf3);
-      r(left+12,y-23,9,4,p.leaf3);
-      // Small breaks in foliage make the individual leaf clumps read clearly.
-      r(left+4,y-4,5,3,p.leafDark);
-      r(left+w-10,y-3,5,3,p.leafDark);
-    }
+      ? [[48,215,29],[145,194,25],[264,199,28],[420,198,30],[595,215,31]]
+      : [[24,214,28],[201,216,29],[414,215,30],[622,207,29]];
+    for(const [x,y,w] of clusters)shrub(p,x,y,w);
   }
+  function berryBush(p,x,y,w=32){shrub(p,x,y,w,true)}
+
   function fence(x,y,n,p){
     for(let i=0;i<n;i++){const xx=x+i*16;r(xx,y-12,5,23,p.trunk);r(xx+1,y-15,3,5,p.woodLight);r(xx-3,y-6,18,4,p.woodLight);r(xx-3,y+2,18,3,p.wood)}
   }
   function house(p,t){
-    // Cottage: the main doorway is precisely aligned with the path.
     const x=64,y=89;
     r(x+3,y+13,131,88,p.dark);r(x+8,y+19,121,82,p.wall);
     r(x+13,y+32,112,7,p.wallShadow);
     r(x+13,y+47,112,4,p.wallShadow);
     r(x+16,y+63,107,4,p.wallShadow);
-    r(x+88,y-25,20,33,p.dark);r(x+92,y-22,12,28,p.trunk);r(x+85,y-30,27,7,p.roofLight);
-    polygon([[x-12,y+14],[x+43,y-32],[x+83,y-32],[x+146,y+14],[x+146,y+27],[x-12,y+27]],p.dark);
-    polygon([[x-6,y+13],[x+45,y-27],[x+81,y-27],[x+141,y+13],[x+141,y+22],[x-6,y+22]],p.roof);
-    for(let row=0;row<3;row++)for(let i=0;i<10;i++){
-      const xx=x+row*5+i*13-4,yy=y-10+row*10;if(xx>x-5&&xx<x+140)r(xx,yy,8,3,(i+row)%2?p.roofLight:p.roof);
+
+    // Chimney lives BEHIND the roof; no disconnected roof stamps.
+    r(x+91,y-29,20,38,p.dark);
+    r(x+94,y-26,14,34,p.trunk);
+    r(x+89,y-32,24,5,p.roofLight);
+    const rim=[[x-12,y+14],[x+43,y-32],[x+83,y-32],
+      [x+146,y+14],[x+146,y+27],[x-12,y+27]];
+    const roof=[[x-6,y+13],[x+45,y-27],[x+81,y-27],
+      [x+141,y+13],[x+141,y+22],[x-6,y+22]];
+    polygon(rim,p.dark);polygon(roof,p.roof);
+    // Clip roof tiles to the roof polygon so none float over its edges.
+    ctx.save();
+    ctx.beginPath();ctx.moveTo(...roof[0]);
+    for(let i=1;i<roof.length;i++)ctx.lineTo(...roof[i]);
+    ctx.closePath();ctx.clip();
+    for(let row=0;row<5;row++){
+      for(let i=0;i<12;i++){
+        const xx=x-19+row*5+i*14,yy=y-19+row*9;
+        r(xx,yy,9,3,(i+row)%2?p.roofLight:p.roof);
+      }
     }
+    ctx.restore();
     r(x-12,y+22,158,7,p.roofLight);
-    // The windows sit on either side of the door, never overlap it.
+
     for(const dx of [22,110]){
       r(x+dx-3,y+43,22,28,p.dark);r(x+dx,y+46,16,22,p.window);
       r(x+dx+7,y+46,2,22,p.wood);r(x+dx,y+56,16,2,p.wood);
       r(x+dx-4,y+71,24,4,p.woodLight);
-      if(p.night){r(x+dx+3,y+49,3,4,p.glow)}
+      if(p.night)r(x+dx+3,y+49,3,4,p.glow);
     }
     r(x+61,y+43,29,58,p.dark);r(x+64,y+46,23,55,p.wood);
     r(x+68,y+47,16,3,p.woodLight);r(x+82,y+76,3,3,p.glow);
     r(x+59,y+100,33,5,p.woodLight);
     r(x+53,y+105,46,5,p.path);
-    // Flower box and doorstep
     r(x+13,y+72,31,7,p.wood);r(x+14,y+70,28,4,p.leaf2);
     r(x+17,y+66,3,4,p.flower);r(x+28,y+63,3,7,p.flower2);
     r(x+103,y+72,31,7,p.wood);r(x+106,y+68,3,4,p.flower3);
-    // Lantern
-    r(x+138,y+43,3,10,p.dark);r(x+135,y+51,10,14,p.dark);r(x+137,y+53,6,10,p.glow);
+    r(x+138,y+43,3,10,p.dark);r(x+135,y+51,10,14,p.dark);
+    r(x+137,y+53,6,10,p.glow);
     if(p.night){ctx.globalAlpha=.15;oval(x+140,y+61,25,25,p.glow);ctx.globalAlpha=1}
   }
+  function mailbox(p,x,y,t){
+    oval(x+11,y+1,17,4,p.grassShade);
+    r(x+9,y-27,6,28,p.trunk);
+    r(x+8,y-24,8,4,p.woodLight);
+    // Mailbox body, dark outline and curved top.
+    r(x,y-48,25,23,p.dark);
+    r(x+3,y-51,19,5,p.roofLight);
+    r(x+3,y-45,19,17,p.woodLight);
+    r(x+5,y-43,15,12,'#eac7c3');
+    r(x+9,y-39,6,3,p.wood);
+    r(x+1,y-28,23,4,p.wood);
+    const ready=Boolean(state.unread);
+    r(x+22,y-47,3,17,p.trunk);
+    r(x+23,y-(ready?59:51),9,9,ready?'#d36f86':p.roof);
+    r(x+25,y-(ready?57:49),5,3,p.flower2);
+    if(ready||t<mailPulse){
+      r(x+7,y-57,11,8,p.wall);r(x+7,y-57,11,2,p.roofLight);
+      r(x+12,y-52,3,2,p.roof);
+      if(p.night)r(x+18,y-61,3,3,p.glow);
+    }
+  }
+
   function path(p){
     // Pixel stepping stones centred on cottage door (x=139).
     const stones=[[128,203,27,10],[138,218,29,11],[153,234,37,10],[184,246,43,9]];
@@ -200,13 +257,36 @@
   }
   function meadow(p,t){
     sky(p,t);land(p);
-    tree(23,157,.68,p,t);tree(382,160,.78,p,t);
+    tree(21,183,.72,p,t);
+    tree(536,191,.68,p,t);
+    tree(647,192,.75,p,t);
     fence(14,177,6,p);
-    house(p,t);path(p);
-    bushes(p,'meadow');pond(p,t);
-    // Raised kitchen garden, clearly separated from pond and footpath.
-    r(27,185,68,7,p.wood);r(31,178,60,8,p.ground);
-    for(let i=0;i<5;i++){const x=36+i*11;r(x,174,2,8,p.leafDark);r(x-4,171,10,5,p.leaf2);r(x,168,3,5,p.leaf3)}
+    house(p,t);
+    path(p);
+    // Pond is an inviting stopping point without overlapping the walking trail.
+    pond(p,t);
+    bushes(p,'meadow');
+    r(27,190,68,7,p.wood);r(31,183,60,8,p.ground);
+    for(let i=0;i<5;i++){
+      const x=36+i*11;
+      r(x,179,2,8,p.leafDark);r(x-4,176,10,5,p.leaf2);r(x,173,3,5,p.leaf3);
+    }
+    // Two berry patches, one beside the garden, another in the larger meadow.
+    berryBush(p,50,230,32);
+    berryBush(p,461,220,37);
+    berryBush(p,586,233,34);
+
+    // The cottage's little postbox is directly beside the path and driveway.
+    mailbox(p,237,216,t);
+    // Followable stones lead beyond the original postcard-size meadow.
+    for(const [x,y,w] of [[406,235,23],[437,238,27],[475,240,26],
+      [509,237,31],[547,232,28],[581,231,28],[617,233,31],[647,236,30]]){
+      r(x,y+2,w,8,p.ground);r(x+2,y,w-4,7,p.path);r(x+4,y+2,w-8,2,p.pathLight);
+    }
+    for(const [x,y,c] of [[430,180,p.flower3],[492,221,p.flower],
+      [555,219,p.flower2],[612,229,p.flower3]]){
+      flower(x,y,p,c);
+    }
     flowers(p,'meadow');
   }
   function log(p,x,y,w,h){r(x,y,w,h,p.trunk);r(x+4,y+2,w-8,h-4,p.trunkLight);r(x+6,y+2,3,h-4,p.wood)}
@@ -214,106 +294,100 @@
     r(x-1,y+1,5,8,p.wall);r(x-7,y-6,17,8,colour);r(x-4,y-10,11,5,colour);
     r(x-3,y-6,3,3,p.flower2);r(x+4,y-3,2,2,p.flower2);
   }
+  function riverStone(x,y,w,p){
+    r(x-1,y+2,w+2,4,p.grassShade);
+    r(x,y-4,w,8,p.stone);
+    r(x+3,y-5,Math.max(5,w-6),4,p.stoneLight);
+    r(x+2,y+1,w-4,2,p.ground);
+  }
   function grove(p,t){
-    sky(p,t);
-    land(p,true);
+    sky(p,t);land(p,true);
 
-    // Woodland trees now all have their feet planted on visible ground:
-    // distant trunks at the rear grass edge, large trunks in the foreground.
-    for(const [x,y,s] of [[65,171,.54],[142,171,.52],[224,169,.49],[295,171,.53]]){
+    // A wider creek comes from behind the hill/trees and passes entirely
+    // through the lower edge of the world. No cut-off stream sprites.
+    const banks=[[303,151],[336,151],[335,167],[335,183],[345,199],
+      [355,214],[365,229],[388,250],[321,250],[312,231],
+      [298,214],[290,198],[295,181],[298,167]];
+    const deep=[[309,153],[330,153],[329,170],[327,185],[338,200],
+      [350,217],[357,234],[378,250],[332,250],[321,229],
+      [306,212],[299,196],[304,181],[307,167]];
+    const water=[[314,154],[326,154],[326,171],[323,186],[334,201],
+      [346,216],[352,235],[369,250],[337,250],[326,229],
+      [313,212],[306,196],[310,181],[312,165]];
+    polygon(banks,p.grassShade);
+    polygon(deep,p.waterDeep);
+    polygon(water,p.water);
+    for(const [x,y,w] of [[314,175,10],[313,189,11],[322,204,12],
+      [333,223,14],[342,237,16],[350,248,13]]){
+      r(x+Math.round(Math.sin(t*.0008+x)*2),y,w,3,p.waterLight);
+    }
+    // Irregular stones hug the banks, but leave a gap under the bridge.
+    for(const [x,y,w] of [[289,177,12],[289,193,10],[280,206,13],
+      [292,232,13],[306,245,17],[339,161,14],[339,182,11],
+      [351,201,12],[373,235,15],[389,248,14]]){
+      riverStone(x,y,w,p);
+    }
+
+    // Trees are planted after the creek so the upstream source is hidden
+    // behind their foliage. Trunks visibly reach the ground.
+    for(const [x,y,s] of [[66,174,.58],[147,175,.56],[251,179,.56],
+      [318,176,.56],[455,174,.55],[575,177,.62]]){
       tree(x,y,s,p,t);
     }
-    tree(21,207,.89,p,t,true);
-    tree(387,207,.94,p,t,true);
-    // Midground trees give depth but never end above the grass.
-    tree(95,184,.54,p,t);
-    tree(267,178,.51,p,t);
+    tree(20,205,.85,p,t,true);
+    tree(624,205,.87,p,t,true);
+    tree(393,186,.55,p,t);
 
-    bushes(p,'grove');
-
-    // Natural creek bending down the right edge; foliage is BEHIND the water.
-    polygon([[320,169],[332,170],[327,185],[337,200],[340,214],
-      [359,235],[381,250],[334,250],[322,235],[307,214],
-      [305,198],[308,183]],p.grassShade);
-    polygon([[320,173],[329,175],[323,188],[333,201],[337,217],
-      [354,239],[371,250],[344,250],[327,233],[314,214],
-      [311,197],[315,184]],p.waterDeep);
-    polygon([[321,175],[326,178],[320,188],[330,202],[333,217],
-      [350,240],[361,250],[349,250],[330,231],[317,212],
-      [314,195],[317,185]],p.water);
-    for(const [x,y,w] of [[320,183,7],[318,197,8],[324,210,11],
-      [337,232,11],[347,243,9]]){
-      r(x+Math.round(Math.sin(t*.0008+x)*2),y,w,2,p.waterLight);
-    }
-    for(const [x,y] of [[307,182],[306,193],[363,226],[376,237]]){
-      r(x,y-10,2,10,p.leafDark);
-      r(x+2,y-5,3,5,p.leaf2);
-    }
-
-    // One legible stepping-stone trail from the clearing towards the bridge.
-    for(const [x,y,w] of [[144,190,23],[155,202,26],[173,215,30],
-      [197,226,33],[224,228,35],[252,222,34],[275,217,24]]){
+    // The trail runs in from the LEFT edge, crosses the bridge and
+    // continues all the way to the RIGHT edge of the expanded world.
+    for(const [x,y,w] of [[-12,234,27],[20,234,27],[54,234,28],
+      [89,228,26],[123,219,29],[157,215,29],[192,219,31],
+      [226,223,33],[263,218,29],[359,215,24],[391,212,25],
+      [421,213,25],[451,219,28],[484,226,30],[518,232,30],
+      [551,237,30],[587,240,30],[620,239,28],[651,238,29]]){
       r(x-1,y+2,w+2,9,p.ground);
       r(x,y,w,8,p.stone);
       r(x+3,y+1,w-6,5,p.stoneLight);
       r(x+5,y+5,w-10,2,p.stone);
     }
-
-    // A bridge across BOTH stream banks at a consistent height.
-    r(286,216,67,8,p.trunk);
-    r(288,212,63,8,p.wood);
-    for(let x=291;x<=342;x+=9){
-      r(x,213,7,6,p.woodLight);
-      r(x+2,215,2,3,p.trunkLight);
+    // Proper bridge: planked surface and side rails line up with BOTH banks.
+    r(284,216,75,10,p.trunk);
+    r(286,212,71,10,p.wood);
+    for(let x=288;x<=350;x+=9){
+      r(x,213,7,7,p.woodLight);r(x+2,216,2,3,p.trunkLight);
     }
-    r(289,199,5,17,p.trunk);
-    r(346,199,5,17,p.trunk);
-    r(289,198,62,5,p.woodLight);
-    r(294,205,52,3,p.wood);
-    r(285,222,69,3,p.ground);
+    r(289,199,5,17,p.trunk);r(350,199,5,17,p.trunk);
+    r(289,198,66,5,p.woodLight);r(294,206,56,3,p.wood);
+    r(284,225,74,3,p.ground);
 
-    // Ancient stones on the LEFT, well away from Pip's route.
-    for(const [x,y,h] of [[71,217,11],[88,207,15],[106,208,14],
-      [120,218,11],[105,231,9],[82,231,10]]){
+    // Ancient stones and a tiny mushroom glade are reachable from the path.
+    for(const [x,y,h] of [[65,205,11],[80,197,15],[97,198,14],
+      [113,205,11],[98,219,9],[76,220,10]]){
       r(x-5,y+2,13,5,p.grassShade);
       r(x-3,y-h+2,9,h,p.stone);
       r(x,y-h,4,8,p.stoneLight);
-      r(x-2,y-h+4,2,3,p.leaf3);
     }
-    r(96,218,5,10,p.flower3);
-    r(98,214,3,4,p.glow);
-
-    // Wooden sign sits in the clearing rather than floating above shrubs.
-    r(52,184,5,22,p.trunk);
-    r(43,177,37,15,p.trunk);
-    r(45,179,33,11,p.woodLight);
-    r(51,183,18,3,p.wall);
-    r(70,183,5,3,p.wall);
-    r(51,204,9,3,p.grassShade);
-
-    // Group wildflowers in small beds. Don't blanket the trail with sprites.
-    const beds=[
-      [[32,228],[49,236],[56,222]],
-      [[140,240],[157,244],[177,238]],
-      [[226,244],[245,242],[263,246]],
-      [[367,229],[382,236],[394,224]]
-    ];
-    let i=0;
-    for(const bed of beds){
-      for(const [x,y] of bed){
-        flower(x,y,p,[p.flower,p.flower2,p.flower3][i++%3]);
-      }
-    }
-    for(const [x,y,c] of [[34,211,p.flower3],[55,226,p.flower],
-      [126,236,p.flower3],[228,189,p.flower2],[252,190,p.flower3],
-      [375,240,p.flower]]){
+    r(87,207,5,10,p.flower3);r(89,203,3,4,p.glow);
+    // Forest sign is rooted rather than a suspended rectangle.
+    r(48,191,5,22,p.trunk);r(37,181,38,16,p.trunk);
+    r(39,183,34,12,p.woodLight);r(43,188,21,3,p.wall);
+    r(48,212,7,3,p.grassShade);
+    bushes(p,'grove');
+    berryBush(p,482,204,34);
+    berryBush(p,563,217,32);
+    for(const [x,y,c] of [[37,213,p.flower3],[137,234,p.flower],
+      [230,191,p.flower2],[450,190,p.flower3],[510,216,p.flower],
+      [553,206,p.flower3],[602,225,p.flower2]]){
       mushroom(x,y,p,c);
     }
-    if(p.night){
-      for(let j=0;j<7;j++){
-        const x=60+hash(j,87)*300,y=171+hash(j,88)*60;
-        if(Math.sin(t*.002+j*2.3)>.12)r(x,y,2,2,p.glow);
-      }
+    for(const [x,y,c] of [[29,226,p.flower3],[137,239,p.flower2],
+      [198,239,p.flower],[269,239,p.flower3],[408,231,p.flower2],
+      [493,245,p.flower3],[584,241,p.flower]]){
+      flower(x,y,p,c);
+    }
+    if(p.night)for(let j=0;j<10;j++){
+      const x=60+hash(j,87)*570,y=175+hash(j,88)*60;
+      if(Math.sin(t*.002+j*2.3)>.12)r(x,y,2,2,p.glow);
     }
   }
   function hearth(p,t){
