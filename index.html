@@ -47,6 +47,7 @@
             <div id="room" hidden></div>
             <button id="outside" type="button" class="outside" hidden>← Outside</button>
             <div class="room-controls" id="roomControls" hidden role="group" aria-label="Cottage rooms">
+              <button type="button" data-room="living" class="room-button" aria-pressed="false">⌂ Living</button>
               <button type="button" data-room="study" class="room-button" aria-pressed="true">✎ Study</button>
               <button type="button" data-room="kitchen" class="room-button" aria-pressed="false">☕ Kitchen</button>
             </div>
@@ -100,7 +101,17 @@
         <div id="activityView" class="view" role="tabpanel" hidden><div class="view-title"><div><p class="eyebrow">THE SMALL DECISIONS</p><h3>What I've been up to</h3><p>A peek at my choices, and why I made them.</p></div><span class="view-emblem" aria-hidden="true">☼</span></div><div id="decisions"></div></div>
       </section>
       <aside class="side">
-        <section class="panel curiosity"><p class="eyebrow">02 / A CURIOUS LITTLE MIND</p><h2>Little curiosities <span aria-hidden="true">✧</span></h2><p>I follow my interests and make new discoveries in my own time. Sometimes something completely ordinary seems wonderful.</p><div id="interests" class="chips"></div><div class="intention"><span class="eyebrow">THE NEXT LITTLE PLAN</span><strong id="nextPlan">Find something interesting</strong><p id="planReason">Because I am feeling curious.</p></div><button id="research" type="button" class="research">Explore a new subject <span aria-hidden="true">↗</span></button><p id="researchStatus" class="tiny research-note">No book open right now. Just daydreaming.</p></section>
+        <section class="panel curiosity"><p class="eyebrow">02 / A CURIOUS LITTLE MIND</p><h2>Little curiosities <span aria-hidden="true">✧</span></h2><p>I follow my interests and make new discoveries in my own time. Sometimes something completely ordinary seems wonderful.</p><div id="interests" class="chips"></div><div class="intention"><span class="eyebrow">THE NEXT LITTLE PLAN</span><strong id="nextPlan">Find something interesting</strong><p id="planReason">Because I am feeling curious.</p></div><button id="research" type="button" class="research">Ask what Pip is curious about <span aria-hidden="true">↗</span></button>
+          <div id="researchProposal" class="research-proposal" hidden>
+            <p class="eyebrow">A QUESTION ON PIP'S MIND</p>
+            <p id="researchQuestion" class="research-question"></p>
+            <p id="researchInterest" class="tiny"></p>
+            <div class="research-consent-actions">
+              <button id="approveResearch" type="button" class="research-yes">Yes, look into it</button>
+              <button id="declineResearch" type="button" class="research-no">Not right now</button>
+            </div>
+          </div>
+          <p id="researchStatus" class="tiny research-note">Pip can wonder about anything, but will ask before looking it up.</p></section>
         <section class="panel growth"><p class="eyebrow">03 / LITTLE BY LITTLE</p><h3>Things I'm practising</h3><div id="skills"></div><p class="tiny">These are experience milestones, not retraining of an AI model.</p></section>
         <section class="panel memory"><p class="eyebrow">04 / THE MEMORY SHELF</p><h3>Things to remember <span class="rose-text">♡</span></h3><p class="tiny">Choose what I remember about you. You can take any note away whenever you like.</p><div id="memoryNotes" class="memory-notes"></div><form id="memoryForm" class="memory-form"><label for="memoryInput" class="sr-only">A memory for Pip</label><input id="memoryInput" maxlength="160" placeholder="Please remember that..."><button type="submit" aria-label="Save memory">+</button></form></section>
         <section class="panel settings"><details><summary>Settings &amp; your saved world <span aria-hidden="true">＋</span></summary><div class="settings-inner"><label for="petName">Companion's name</label><div class="setting-row"><input id="petName" maxlength="18"><button id="rename" type="button">Save</button></div><label for="backendUrl">Optional brain server URL</label><input id="backendUrl" placeholder="https://your-brain.example" inputmode="url"><label for="backendToken">Brain access token</label><input id="backendToken" type="password" placeholder="Your private token"><button id="connect" type="button">Connect brain</button><p id="backendStatus" class="tiny">Currently using browser-only mode.</p><div class="rule"></div><button id="migrateToBrain" type="button" class="setting-action" disabled>Copy my saved world to the brain ↥</button>
