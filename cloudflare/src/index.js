@@ -5,6 +5,47 @@
  */
 const TOPICS = ["wildflowers", "the moon", "butterflies", "forests", "mushrooms",
   "stars", "birds", "oceans", "bees", "clouds", "foxes", "seashells"];
+
+/* Pip's interests become specific questions first, not automatic searches.
+   These suggestions are locally generated, with no network call or AI cost. */
+const CURIOSITIES = {
+  wildflowers:[
+    ["Why do some wildflowers open at different times of day?","flower opening and closing","I like that flowers seem to keep their own little schedules."],
+    ["How do wildflowers spread their seeds?","seed dispersal","It makes the meadow feel full of small travellers."]
+  ],
+  "the moon":[
+    ["Why does the Moon sometimes appear during the day?","Moon","I wonder how many times I've walked beneath it without noticing."],
+    ["What causes the Moon's phases?","lunar phase","There is something comforting about a pattern that keeps coming back."]
+  ],
+  butterflies:[["How do butterflies find the flowers they like?","butterfly","I like imagining them following clues through the meadow."]],
+  forests:[["How do trees communicate through underground fungi?","mycorrhizal network","The forest might be busier beneath the ground than above it."]],
+  mushrooms:[
+    ["Why do mushrooms appear so quickly after rain?","mushroom","I have been thinking about those tiny umbrellas along the path."],
+    ["What is the hidden part of a mushroom doing underground?","mycelium","I never realised how much of a mushroom stays out of sight."]
+  ],
+  stars:[["Why do stars seem to twinkle?","scintillation astronomy","The sky looks so still until you watch it closely."]],
+  birds:[["How do migrating birds find their way home?","bird migration","I always wonder where the birds are heading."]],
+  oceans:[["Why do some sea creatures produce their own light?","bioluminescence","Imagine finding a light in the deep water!"]],
+  bees:[["How do bees show one another where flowers are?","waggle dance","A tiny dance to share a secret sounds lovely."]],
+  clouds:[["How do clouds get their different shapes?","cloud","Some of them look like stories that are still being drawn."]],
+  foxes:[["How do foxes find food when they cannot see it?","red fox","I often wonder what they hear in the long grass."]],
+  seashells:[["How does a sea snail grow its shell?","seashell","It's a little home that grows with its owner."]]
+};
+export function proposeCuriosity(world, chosenTopic) {
+  const chosen=(chosenTopic&&CURIOSITIES[chosenTopic])?chosenTopic:topic(world);
+  const options=CURIOSITIES[chosen]||CURIOSITIES.mushrooms;
+  const previous=world.discoveries?.filter(d=>d.topic===chosen).map(d=>d.question)||[];
+  const available=options.filter(q=>!previous.includes(q[0]));
+  const [question,searchTerm,thought]=sample(available.length?available:options);
+  const idea={id:uid(),topic:chosen,question,searchTerm,thought,at:time()};
+  world.pendingResearch=idea;
+  world.plan={
+    action:"Ask before exploring "+chosen,
+    reason:"I've been wondering: "+question
+  };
+  return idea;
+}
+
 const STAT_KEYS = ["hunger", "energy", "social", "joy", "curiosity"];
 const DEFAULT_ORIGIN = "https://veritycooper.github.io";
 const DEFAULT_MODEL = "@cf/meta/llama-3.2-3b-instruct";
@@ -26,7 +67,7 @@ export function freshWorld() {
     x: 57, y: 64, night: false,
     messages: [{ id: uid(), from: "pet", text: "Hello! I found a quiet little cottage in the meadow. I hope we can be friends.", at: t }],
     journal: [{ id: uid(), title: "A new beginning", text: "Today I discovered a little place to call home.", at: t }],
-    discoveries: [], decisions: [], memories: [], pending: [],
+    discoveries: [], decisions: [], memories: [], pending: [], pendingResearch: null,
     unread: false, nextAction: t + 80_000, nextResearch: t + 8 * 3600_000,
     plan: { action: "Explore the meadow", reason: "I'm curious about my new home." },
     dailyAI: { day: "", count: 0 }, lastReplyMode: "none",
@@ -173,7 +214,7 @@ function discovery(world, data) {
   world.interests[data.topic] = Math.min(8, (world.interests[data.topic] || 1) + 1);
   world.skills.reading = Math.min(100, world.skills.reading + 4);
   world.stats.curiosity = clamp(world.stats.curiosity + 12);
-  note(world, "I read about " + data.topic, "I discovered " + data.title + ". " + data.summary.slice(0, 200));
+  note(world, "A question about " + data.topic, "I wondered: " + clean(data.question, 140) + " I found a source about " + clean(data.title, 80) + ". " + clean(data.thought, 160));
   return true;
 }
 async function wikipedia(subject) {
@@ -190,7 +231,7 @@ async function wikipedia(subject) {
   const data = await response.json();
   const page = (data.query?.pages || []).find(p => p.extract && !p.missing);
   if (!page) throw Error("I couldn't find a source for that yet");
-  return { title: clean(page.title, 110), summary: clean(page.extract, 520),
+  return { title: clean(page.title, 110), summary: clean(page.extract, 210),
     topic: subject, at: time(),
     url: "https://en.wikipedia.org/wiki/" + encodeURIComponent(page.title.replaceAll(" ", "_")) };
 }
@@ -202,7 +243,8 @@ export function brainContext(world, message) {
   const memories = (world.memories || []).slice(-10).map(x => clean(x, 160));
   const journals = (world.journal || []).slice(0, 3).map(e => clean(e.title, 70) + ": " + clean(e.text, 155));
   const sources = (world.discoveries || []).slice(0, 3).map(d =>
-    clean(d.title, 80) + " (" + clean(d.url, 160) + "): " + clean(d.summary, 145));
+    "Question: " + clean(d.question, 130) + " | Source: " + clean(d.title, 80) + 
+    " (" + clean(d.url, 160) + "): " + clean(d.summary, 145));
   const interests = Object.entries(world.interests || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]);
   return [
     "You are " + clean(world.name || "Pip", 18) + ", a small supernatural woodland creature living in a cottage by a meadow and a forest.",
@@ -214,6 +256,8 @@ export function brainContext(world, message) {
     "Current location: " + clean(world.location, 30) + ". Room: " + clean(world.room || "study", 20) + ". Activity: " + clean(world.activity, 100) + ".",
     "Needs: " + STAT_KEYS.map(k => k + "=" + clamp(stat[k])).join(", "),
     "Interests: " + interests.join(", "),
+    "Question waiting for permission: " + clean(world.pendingResearch?.question, 160),
+    "If discussing research, ask before looking anything up; do not claim you've searched without explicit approval.",
     "Your plan: " + clean(world.plan?.action, 100) + ". Reason: " + clean(world.plan?.reason, 100),
     "USER-APPROVED MEMORIES: " + JSON.stringify(memories),
     "RECENT JOURNAL: " + JSON.stringify(journals),
@@ -297,6 +341,7 @@ function safeImport(data) {
   out.lastOutdoor = data.lastOutdoor === "grove" ? "grove" : "meadow";
   out.room = data.room === "kitchen" ? "kitchen" : "study";
   out.lastForageAt = 0;
+  out.pendingResearch = null;
   out.activity = clean(data.activity, 100) || fresh.activity;
   out.x = Math.max(10, Math.min(150, Number(data.x) || 57));
   out.y = Math.max(52, Math.min(77, Number(data.y) || 64));
@@ -311,7 +356,9 @@ function safeImport(data) {
   out.discoveries = cap((Array.isArray(data.discoveries) ? data.discoveries : []).filter(e =>
     e && typeof e.url === "string" && /^https:\/\/en\.wikipedia\.org\/wiki\/[^\s]+$/.test(e.url))
     .map(e => ({ title: clean(e.title, 100), summary: clean(e.summary, 520),
-      topic: TOPICS.includes(e.topic) ? e.topic : "nature", url: e.url.slice(0, 350),
+      topic: TOPICS.includes(e.topic) ? e.topic : "nature",
+      question: clean(e.question, 160),thought:clean(e.thought,180),
+      url: e.url.slice(0, 350),
       at: Number(e.at) || time() })), 70);
   // Never import untrusted queued jobs, AI usage counters or internal auth fields.
   out.unread = false;
@@ -331,14 +378,13 @@ async function advance(env) {
         break;
       }
     }
-    let researchTopic = null;
     if (t >= state.nextResearch) {
-      researchTopic = topic(state);
+      if (!state.pendingResearch) proposeCuriosity(state);
       state.nextResearch = t + (7 + Math.floor(Math.random() * 6)) * 3600_000;
     }
-    return { claim, researchTopic };
+    return { claim };
   });
-  const { claim, researchTopic } = updated.result;
+  const { claim } = updated.result;
   if (claim) {
     const answer = await aiReply(env, updated.state, claim.text, claim.ai);
     await change(env, world => {
@@ -352,14 +398,7 @@ async function advance(env) {
       world.unread = true;
     });
   }
-  if (researchTopic) {
-    try {
-      const found = await wikipedia(researchTopic);
-      await change(env, world => discovery(world, found));
-    } catch (error) {
-      console.warn("Background research unavailable:", error?.name || "Error");
-    }
-  }
+  // Scheduled routines suggest questions only. They NEVER request external research.
 }
 
 async function handle(request, env) {
@@ -492,26 +531,67 @@ async function handle(request, env) {
       });
       return result.result ? json({ ok: true }, 200, headers) : fail(404, "Memory not found", headers);
     }
-    if (path === "/api/research" && method === "POST") {
-      const data = await bodyOf(request);
-      const chosen = data.topic == null ? topic((await load(env)).state) : validateString(data.topic, 75);
-      if (!chosen || !/^[a-zA-Z ]{2,75}$/.test(chosen)) return fail(400, "Invalid research topic", headers);
-      const wait = await change(env, world => {
-        if (time() - world.lastManualResearch < 120_000) return false;
-        world.lastManualResearch = time(); return true;
+    if (path === "/api/research/propose" && method === "POST") {
+      const result=await change(env,world=>{
+        if (world.pendingResearch) return world.pendingResearch;
+        return proposeCuriosity(world);
       });
-      if (!wait.result) return fail(429, "Pip needs a little time between research trips", headers);
-      try {
-        const result = await wikipedia(chosen);
-        await change(env, world => {
-          discovery(world, result);
-          world.location="cottage";
-          world.room="study";
-          world.activity="Researching "+clean(chosen,70)+" on my little computer";
-          world.plan={action:"Think about my discovery",reason:"I want to understand what I just read."};
+      return json({proposal:result.result},200,headers);
+    }
+    if (path === "/api/research/decision" && method === "POST") {
+      const data=await bodyOf(request);
+      if(typeof data.id!=="string"||typeof data.approve!=="boolean")
+        return fail(400,"Choose yes or not now for a specific question",headers);
+      if(!data.approve){
+        const result=await change(env,world=>{
+          if(world.pendingResearch?.id!==data.id)return false;
+          world.pendingResearch=null;
+          world.plan={action:"Think of another question later",
+            reason:"My friend would rather I didn't look this up now."};
+          world.nextResearch=Math.max(world.nextResearch||0,time()+4*3600_000);
+          return true;
         });
-        return json(result, 200, headers);
-      } catch { return fail(503, "Research source is unavailable. Try again later.", headers); }
+        return result.result?json({ok:true,declined:true},200,headers):
+          fail(409,"That question is no longer pending",headers);
+      }
+      const claimed=await change(env,world=>{
+        const pending=world.pendingResearch;
+        if(!pending||pending.id!==data.id||pending.working)return null;
+        pending.working=true;
+        world.location="cottage";
+        world.room="study";
+        world.activity="Looking up a question about "+clean(pending.topic,60);
+        return {...pending};
+      });
+      if(!claimed.result)return fail(409,"This question has already been handled",headers);
+      try {
+        const idea=claimed.result;
+        const item=await wikipedia(idea.searchTerm);
+        item.topic=idea.topic;
+        item.question=idea.question;
+        item.thought=idea.thought;
+        await change(env,world=>{
+          if(world.pendingResearch?.id!==idea.id)return;
+          discovery(world,item);
+          world.pendingResearch=null;
+          world.plan={action:"Think about my discovery",reason:"I've learned a little about "+idea.topic+"."};
+          world.activity="Writing a short note about "+idea.topic;
+        });
+        return json({ok:true,discovery:item},200,headers);
+      }catch(error){
+        await change(env,world=>{
+          if(world.pendingResearch?.id===claimed.result.id){
+            world.pendingResearch.working=false;
+            world.activity="Waiting to try my library search again";
+          }
+        });
+        console.warn("Approved research failed:",error?.name||"Error");
+        return fail(503,"The research source is unavailable. Your permission request is still here.",headers);
+      }
+    }
+    if (path === "/api/research" && method === "POST") {
+      // Old site versions cannot bypass the consent flow.
+      return fail(403,"Research now requires an approved question",headers);
     }
     if (path === "/api/import" && method === "POST") {
       const input = await bodyOf(request, 220000);
