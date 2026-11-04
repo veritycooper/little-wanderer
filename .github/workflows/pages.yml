@@ -24,7 +24,12 @@ jobs:
           node --check app.js
           node --check pixel-world.js
       - name: Check Python backend syntax
-        run: python -m py_compile backend/main.py
+        run: |
+          python -m py_compile backend/main.py backend/brain.py
+      - name: Run brain unit and API tests
+        run: |
+          python -m pip install -r backend/requirements.txt "httpx>=0.27,<1"
+          python -m unittest discover -s backend/tests -v
       - name: Validate site files
         run: |
           test -s index.html
