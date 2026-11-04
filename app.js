@@ -5,7 +5,7 @@ const DATA_KEY='little-wanderer-v1',CONFIG_KEY='little-wanderer-config',THEME_KE
 const topics=['wildflowers','the moon','butterflies','forests','mushrooms','stars','birds','oceans','bees','clouds','foxes','seashells'];
 const statMeta=[['hunger','▤','Full tummy'],['energy','☾','Energy'],['social','✉','Social'],['joy','✧','Happiness'],['curiosity','✦','Curiosity']];
 const safeText=s=>String(s||'').slice(0,2000);
-const makeWorld=()=>({version:1,name:'Pip',created:now(),lastTick:now(),stats:{hunger:78,energy:81,social:74,joy:84,curiosity:68},skills:{exploring:3,reading:2,friendship:4,gardening:1},interests:Object.fromEntries(topics.map((t,i)=>[t,i<4?2:1])),location:'meadow',activity:'Admiring the flowers',x:57,y:64,night:false,messages:[{id:'hello',from:'pet',text:"Oh! Hello there. I'm Pip. I found a cosy cottage and some very interesting flowers. Do you think we could be friends?",at:now()}],journal:[{id:'first',at:now(),title:'A new beginning',text:"Today I arrived in a little meadow. There's a cottage, a pond, and enough curiosity to fill a whole library. I wonder who I'll meet?"}],discoveries:[],pending:[],nextAction:now()+65000,nextResearch:now()+1000*60*12,unread:false,memories:[],decisions:[],plan:{action:'explore',reason:'I want to discover something new.'}});
+const makeWorld=()=>({version:1,name:'Pip',created:now(),lastTick:now(),stats:{hunger:78,energy:81,social:74,joy:84,curiosity:68},skills:{exploring:3,reading:2,friendship:4,gardening:1},interests:Object.fromEntries(topics.map((t,i)=>[t,i<4?2:1])),location:'meadow',lastOutdoor:'meadow',activity:'Admiring the flowers',x:57,y:64,night:false,messages:[{id:'hello',from:'pet',text:"Oh! Hello there. I'm Pip. I found a cosy cottage and some very interesting flowers. Do you think we could be friends?",at:now()}],journal:[{id:'first',at:now(),title:'A new beginning',text:"Today I arrived in a little meadow. There's a cottage, a pond, and enough curiosity to fill a whole library. I wonder who I'll meet?"}],discoveries:[],pending:[],nextAction:now()+65000,nextResearch:now()+1000*60*12,unread:false,memories:[],decisions:[],plan:{action:'explore',reason:'I want to discover something new.'}});
 let state;try{state={...makeWorld(),...JSON.parse(localStorage.getItem(DATA_KEY))};}catch{state=makeWorld()}
 let config;try{config=JSON.parse(localStorage.getItem(CONFIG_KEY))||{};}catch{config={}}
 let uiNight;try{const theme=localStorage.getItem(THEME_KEY);uiNight=theme===null?Boolean(state.night):theme==='dark';}catch{uiNight=Boolean(state.night)}
@@ -28,15 +28,20 @@ function renderInterests(){$('interests').replaceChildren();Object.entries(state
 function renderSkills(){$('skills').replaceChildren();for(const [name,val] of Object.entries(state.skills)){const r=document.createElement('div');r.className='skill';const label=document.createElement('span');label.textContent=name[0].toUpperCase()+name.slice(1);const bar=document.createElement('div');bar.className='bar';const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=val+'%';bar.append(fill);const n=document.createElement('b');n.textContent=val+' xp';r.append(label,bar,n);$('skills').append(r)}}
 function renderWorld(){
  const isHome=state.location==='cottage';
+ const zone=state.location==='grove'?'grove':'meadow';
  $('room').hidden=!isHome;
  $('outside').hidden=!isHome;
- $('cottage').hidden=isHome;
- $('location').textContent=isHome?'Inside the cottage':'Wandering outside';
+ $('cottage').hidden=isHome||zone==='grove';
+ $('location').textContent=isHome?'Inside the cottage':zone==='grove'?'Exploring the woodland':'Wandering outside';
+ $('worldHeading').textContent=isHome?'Little Cottage':zone==='grove'?'Whispering Woods':'Rosewood Meadow';
  $('activity').textContent=state.activity;
- $('worldNote').textContent=isHome?'A warm, quiet place with a shelf full of books.':'A breeze brushes through the rose-coloured grass.';
- $('visitButton').textContent=isHome?'Return to meadow ↗':'Visit the cottage ↗';
- state.night=uiNight;
- setTheme(uiNight);
+ $('worldNote').textContent=isHome?'A warm room with books and a crackling fireplace.':zone==='grove'?'A little stream winds between the woodland trees.':'Sunshine drifts across the meadow.';
+ $('visitButton').textContent=isHome?'Return outside ↗':zone==='grove'?'Head to the meadow ↗':'Visit the cottage ↗';
+ for(const button of document.querySelectorAll('[data-scene]')){
+   const selected=(isHome?state.lastOutdoor||'meadow':state.location)===button.dataset.scene;
+   button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));
+ }
+ state.night=uiNight;setTheme(uiNight);
  if(window.PixelWorld)window.PixelWorld.setState(state,!renderWorld.hasRendered);
  renderWorld.hasRendered=true;
 }
@@ -46,7 +51,7 @@ function render(){updateStats();renderMemories();renderDecisions();renderWorld()
 const move=()=>{const oldX=Number(state.x)||57,oldY=Number(state.y)||64;state.x=Math.max(10,Math.min(79,oldX+(Math.random()-.5)*30));state.y=Math.max(53,Math.min(76,oldY+(Math.random()-.5)*17))};
 function act(force){const s=state.stats;let action=force||'wander';if(!force){if(s.energy<24)action='rest';else if(s.hunger<25)action='feed';else if(s.social<30)action='reflect';else if(s.curiosity<35)action='read';else action=rand(['wander','wander','garden','explore','reflect','read','rest']);}
 const notes={wander:['Walking through the meadow','The air smells like wildflowers','A little stroll clears my head'],garden:['Checking the little seedlings','I think the garden looks happier today'],explore:['Investigating something shiny','I saw a curious little bug'],reflect:['Thinking about my day','I wonder what you are doing'],read:['Reading under a tree','Learning something new'],rest:['A well-earned little nap','Resting in my cottage'],feed:['Having something tasty','A snack sounds lovely'],play:['Chasing a fluttering leaf','Playing in the grass']};
-const reasons={rest:'I was running low on energy, so a little rest seemed sensible.',feed:'My tummy was getting empty, and I wanted a snack.',reflect:'I wanted to think about my day and our letters.',read:'I felt curious and wanted a quiet moment with a book.',garden:'The flowers might need tending, and gardening makes me happy.',explore:'I felt curious about the meadow around me.',wander:'A bit of wandering sounded fun.',play:'I wanted to have some fun.'};state.decisions=state.decisions||[];state.decisions.unshift({at:now(),action:action[0].toUpperCase()+action.slice(1),reason:reasons[action]||'It felt like a good idea.'});state.decisions=state.decisions.slice(0,100);state.plan={action:'Explore my interests',reason:'I will choose again after checking my needs.'};state.activity=rand(notes[action]||notes.wander);state.location=action==='rest'||action==='read'?'cottage':'meadow';if(state.location==='meadow')move();
+const reasons={rest:'I was running low on energy, so a little rest seemed sensible.',feed:'My tummy was getting empty, and I wanted a snack.',reflect:'I wanted to think about my day and our letters.',read:'I felt curious and wanted a quiet moment with a book.',garden:'The flowers might need tending, and gardening makes me happy.',explore:'I felt curious about the meadow around me.',wander:'A bit of wandering sounded fun.',play:'I wanted to have some fun.'};state.decisions=state.decisions||[];state.decisions.unshift({at:now(),action:action[0].toUpperCase()+action.slice(1),reason:reasons[action]||'It felt like a good idea.'});state.decisions=state.decisions.slice(0,100);state.plan={action:'Explore my interests',reason:'I will choose again after checking my needs.'};state.activity=rand(notes[action]||notes.wander);state.location=action==='rest'||action==='read'?'cottage':(state.lastOutdoor==='grove'?'grove':'meadow');if(state.location==='cottage'){state.lastOutdoor=state.lastOutdoor||'meadow';}else{state.location=state.lastOutdoor==='grove'?'grove':'meadow';move();}
 if(action==='feed')s.hunger=clamp(s.hunger+36);if(action==='rest')s.energy=clamp(s.energy+33);
 if(action==='wander'||action==='explore'){s.joy=clamp(s.joy+5);s.curiosity=clamp(s.curiosity-3);skill('exploring',2)}
 if(action==='garden'){s.joy=clamp(s.joy+8);skill('gardening',3)}
@@ -65,7 +70,7 @@ if(!state.discoveries.some(d=>d.url===data.url)){state.discoveries.unshift({...d
 const api=(route,options={})=>fetch(config.url.replace(/\/$/,'')+route,{...options,headers:{'Content-Type':'application/json','Authorization':'Bearer '+config.token,...options.headers},signal:AbortSignal.timeout(12000)});
 async function connect(){const url=$('backendUrl').value.trim().replace(/\/$/,'');const token=$('backendToken').value.trim();if(!url||!token){config={};localStorage.removeItem(CONFIG_KEY);$('backendStatus').textContent='Browser-only mode.';return toast('Using browser-only mode.')}if(!/^https:\/\//.test(url)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url))return toast('Use an HTTPS URL or local localhost server.');try{config={url,token};const r=await api('/api/state');if(!r.ok)throw Error('Server rejected connection');const data=await r.json();localStorage.setItem(CONFIG_KEY,JSON.stringify(config));$('backendStatus').textContent='Connected: backend world is active.';$('connectionLabel').textContent='Connected to my brain ✦';toast('Connected to the brain server!');await sync();}catch{config={};toast('Could not connect. Check URL, token and CORS.');$('backendStatus').textContent='Connection failed; browser mode remains available.';}}
 let syncLock=false;
-async function sync(){if(!config.url||!config.token||syncLock)return;syncLock=true;try{const r=await api('/api/state');if(!r.ok)throw Error('Server unavailable');const server=await r.json();Object.assign(state,server);state.night=uiNight;save();render();$('connectionLabel').textContent='Brain is online ✦';}catch{$('connectionLabel').textContent='Brain is offline · browser mode';}finally{syncLock=false}}
+async function sync(){if(!config.url||!config.token||syncLock)return;syncLock=true;try{const r=await api('/api/state');if(!r.ok)throw Error('Server unavailable');const server=await r.json();const place=state.location,lastOutdoor=state.lastOutdoor;Object.assign(state,server);if(place==='grove'||(place==='cottage'&&lastOutdoor==='grove')){state.location=place;state.lastOutdoor=lastOutdoor;}state.night=uiNight;save();render();$('connectionLabel').textContent='Brain is online ✦';}catch{$('connectionLabel').textContent='Brain is offline · browser mode';}finally{syncLock=false}}
 function switchTab(which){for(const b of document.querySelectorAll('.tab')){const selected=b.dataset.tab===which;b.classList.toggle('selected',selected);b.setAttribute('aria-selected',selected)}for(const v of ['chat','journal','discoveries','activity'])$(v+'View').hidden=v!==which;if(which==='chat'){state.unread=false;$('unread').hidden=true;save()}}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 $('memoryForm').addEventListener('submit',async e=>{e.preventDefault();const input=$('memoryInput');const memory=input.value.trim();if(!memory)return;if(config.url&&config.token){try{const response=await api('/api/memories',{method:'POST',body:JSON.stringify({text:memory})});if(!response.ok)throw Error();input.value='';await sync();return}catch{return toast('Unable to save memory to brain server.')}}state.memories=state.memories||[];if(state.memories.length>=30)return toast('The memory shelf is full.');if(!state.memories.includes(memory))state.memories.push(memory);input.value='';save();renderMemories()});
@@ -73,14 +78,24 @@ document.querySelectorAll('[data-care]').forEach(b=>b.addEventListener('click',a
 $('chatForm').addEventListener('submit',async e=>{e.preventDefault();if(config.url&&config.token){const value=$('message').value.trim();if(!value)return;try{const r=await api('/api/message',{method:'POST',body:JSON.stringify({text:value})});if(!r.ok)throw Error();$('message').value='';await sync();return}catch{return toast('The brain is offline. Reconnect or switch to browser mode.')}}sendMessage()});
 $('research').addEventListener('click',lookupResearch);
 $('petInteract').addEventListener('click',()=>document.querySelector('[data-care="play"]').click());
-$('cottage').addEventListener('click',()=>{state.location='cottage';state.activity='Hanging out at home';renderWorld();save()});
-$('visitButton').addEventListener('click',()=>{state.location=state.location==='cottage'?'meadow':'cottage';renderWorld();save()});
-$('outside').addEventListener('click',()=>{state.location='meadow';renderWorld();save()});
+function visitScene(scene){
+ if(!['meadow','grove','cottage'].includes(scene))return;
+ if(scene==='cottage')state.lastOutdoor=state.location==='grove'?'grove':state.lastOutdoor||'meadow';
+ else state.lastOutdoor=scene;
+ state.location=scene;
+ state.activity=scene==='cottage'?'Enjoying a quiet moment at home':scene==='grove'?'Exploring the woodland':'Wandering across the meadow';
+ if(scene!=='cottage')move();
+ renderWorld();save();
+}
+document.querySelectorAll('[data-scene]').forEach(button=>button.addEventListener('click',()=>visitScene(button.dataset.scene)));
+$('cottage').addEventListener('click',()=>visitScene('cottage'));
+$('visitButton').addEventListener('click',()=>visitScene(state.location==='cottage'?(state.lastOutdoor||'meadow'):state.location==='grove'?'meadow':'cottage'));
+$('outside').addEventListener('click',()=>visitScene(state.lastOutdoor||'meadow'));
 $('nightButton').addEventListener('click',()=>{setTheme(!uiNight);renderWorld();save()});
 $('rename').addEventListener('click',async()=>{const name=$('petName').value.trim().slice(0,18);if(!name)return;if(config.url&&config.token){try{const r=await api('/api/name',{method:'POST',body:JSON.stringify({name})});if(r.ok){await sync();return}}catch{}}state.name=name;toast('Your companion is now '+name);save();render()});
 $('connect').addEventListener('click',connect);
 $('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='little-wanderer-memories.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
-$('import').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>2000000)throw Error('Too large');const val=JSON.parse(await file.text());if(!val||val.version!==1||!val.stats||!Array.isArray(val.messages))throw Error('Unsupported save');state={...makeWorld(),...val,lastTick:now()};uiNight=state.night===true;save();render();toast('Memories restored!')}catch{toast('Could not read that save file.')}e.target.value=''});
+$('import').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>2000000)throw Error('Too large');const val=JSON.parse(await file.text());if(!val||val.version!==1||!val.stats||!Array.isArray(val.messages))throw Error('Unsupported save');state={...makeWorld(),...val,lastTick:now()};if(!['meadow','grove','cottage'].includes(state.location))state.location='meadow';uiNight=state.night===true;save();render();toast('Memories restored!')}catch{toast('Could not read that save file.')}e.target.value=''});
 $('reset').addEventListener('click',()=>{if(!confirm('Start a new little world? This clears this browser\'s pet memories. Export first if you wish to keep them.'))return;state=makeWorld();state.night=uiNight;save();render()});
 $('backendUrl').value=config.url||'';$('backendToken').value=config.token||'';
 if(config.url&&config.token){$('connectionLabel').textContent='Connecting to my brain...';sync()}else applyTime();
