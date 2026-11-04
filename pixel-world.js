@@ -82,7 +82,7 @@
     ctx.save();
     ctx.translate(Math.round(x),Math.round(y));
     ctx.scale(s,s);
-    const sway=Math.round(Math.sin(t*.00045+x)*0.8);
+    const sway=motion.matches?0:Math.round(Math.sin(t*.00125+x*.08)*3.4);
 
     // The base of every tree is the actual ground point (x,y).
     oval(0,1,19,5,p.grassShade);
@@ -245,43 +245,103 @@
     const stones=[[128,203,27,10],[138,218,29,11],[153,234,37,10],[184,246,43,9]];
     for(const [x,y,w,h] of stones){r(x,y,w,h,p.ground);r(x+2,y+1,w-4,h-3,p.path);r(x+5,y+3,w-10,2,p.pathLight)}
   }
+  function pondStone(p,x,y,w){
+    r(x-2,y+2,w+4,5,p.grassShade);
+    r(x,y-3,w,8,p.stone);
+    r(x+3,y-4,Math.max(5,w-6),4,p.stoneLight);
+    r(x+3,y+2,w-6,2,p.ground);
+  }
   function pond(p,t){
-    // The complete pond occupies x 280–387, y 185–230. Reeds stay beyond the rim.
-    r(292,184,79,6,p.grassShade);r(284,190,96,10,p.grassShade);r(279,200,108,17,p.grassShade);r(287,217,95,9,p.grassShade);
-    r(295,189,76,4,p.waterLight);r(289,196,89,8,p.water);r(284,204,98,12,p.water);
-    r(292,216,83,6,p.waterDeep);r(304,222,61,3,p.waterLight);
-    for(let i=0;i<3;i++){const x=305+i*21+Math.sin(t*.0008+i)*3,y=198+i*7;r(x,y,13,2,p.waterLight)}
-    r(301,181,2,12,p.leafDark);r(305,183,2,11,p.leaf);r(373,186,2,10,p.leafDark);
-    r(356,216,15,5,p.leaf);r(361,211,6,6,p.leaf2);r(364,211,3,3,p.flower2);
-    for(const [x,y] of [[284,232],[390,207],[379,236]]){r(x,y-10,2,11,p.leaf);r(x-2,y-7,3,4,p.leaf2)}
+    // An irregular basin with soft green banks and natural stone clusters.
+    polygon([[288,184],[305,179],[338,180],[367,183],[386,191],
+      [395,204],[386,221],[368,229],[326,231],[293,224],
+      [279,211],[283,194]],p.grassShade);
+    polygon([[292,188],[308,183],[342,184],[369,188],[383,196],
+      [389,207],[380,219],[359,224],[326,226],[296,220],
+      [285,211],[287,198]],p.waterDeep);
+    polygon([[296,191],[310,187],[338,188],[367,191],[379,198],
+      [382,208],[374,216],[352,221],[328,221],[298,216],
+      [292,208],[294,198]],p.water);
+    for(let i=0;i<5;i++){
+      const x=304+i*15+Math.sin(t*.0006+i)*2,y=200+(i%3)*6;
+      r(x,y,9+(i%2)*5,2,p.waterLight);
+    }
+    for(const [x,y,w] of [[284,187,13],[299,181,14],[332,181,11],
+      [365,185,16],[384,191,12],[387,213,14],[368,229,15],
+      [335,231,12],[307,226,17],[283,217,14]]){
+      pondStone(p,x,y,w);
+    }
+    // Subtle reflections, lily pads and reeds on opposite banks.
+    r(352,211,15,5,p.leaf);r(356,208,9,4,p.leaf2);
+    r(360,208,4,3,p.flower2);
+    r(300,195,12,4,p.leafDark);r(304,192,6,4,p.leaf2);
+    for(const [x,y] of [[276,204],[282,195],[393,199],[386,229]]){
+      r(x,y-12,2,12,p.leafDark);r(x+3,y-8,2,8,p.leaf2);
+      r(x-2,y-8,2,6,p.leaf3);
+    }
+  }
+  function garden(p,t){
+    // A planted corner to the LEFT of the cottage: connected soil, fence,
+    // sprouting vegetables, flowers, a watering can and a tiny tool shed.
+    r(3,197,92,34,p.grassShade);
+    r(7,201,86,27,p.ground);
+    for(const [x,y,w] of [[11,204,23],[40,204,21],[67,204,22],
+      [12,216,23],[42,216,20],[69,216,21]]){
+      r(x,y,w,8,p.trunk);
+      r(x+3,y+2,w-6,4,p.roof);
+      for(let dx=5;dx<w-2;dx+=9){
+        const bend=motion.matches?0:Math.sin(t*.002+x+dx)*1.2;
+        r(x+dx,y-6+bend,2,9,p.leafDark);
+        r(x+dx-4+bend,y-10,6,6,p.leaf2);
+        r(x+dx,y-12+bend,6,6,p.leaf3);
+        if((x+dx)%3===0)r(x+dx,y-13+bend,3,3,p.flower);
+      }
+    }
+    // Low fence and a little garden sign; no pieces suspended in air.
+    for(const x of [3,26,50,75,94]){
+      r(x,190,4,39,p.trunk);r(x+1,187,2,7,p.woodLight);
+    }
+    r(0,197,97,4,p.woodLight);r(0,223,97,4,p.wood);
+    r(5,231,91,3,p.grassShade);
+    r(87,185,4,9,p.trunk);r(78,178,24,10,p.wood);
+    r(80,180,20,6,p.woodLight);
+    // Small watering can, bucket and a neat crate.
+    r(72,211,14,11,p.stone);r(74,208,11,3,p.waterLight);
+    r(85,209,8,4,p.stoneLight);r(91,206,4,3,p.wood);
+    r(8,234,26,8,p.wood);r(11,236,20,3,p.woodLight);
+    flower(32,208,p,p.flower3);
+  }
+  function backgroundTrees(p,t,grove=false){
+    // Softly layered distant evergreens, planted behind foreground scenery.
+    const layout=grove?[[35,168,.38],[99,170,.36],[176,171,.40],
+      [239,166,.34],[304,171,.36],[389,174,.33],[465,169,.39],
+      [522,173,.37],[586,170,.38],[644,172,.37]]
+      :[[12,173,.42],[44,176,.39],[235,174,.38],[265,175,.36],
+        [405,176,.42],[458,175,.40],[502,176,.36],
+        [558,173,.42],[604,172,.40],[647,175,.41]];
+    for(const [x,y,scale] of layout){
+      tree(x,y,scale,p,t);
+    }
   }
   function meadow(p,t){
     sky(p,t);land(p);
+    backgroundTrees(p,t);
     tree(21,183,.72,p,t);
     tree(536,191,.68,p,t);
     tree(647,192,.75,p,t);
-    fence(14,177,6,p);
     house(p,t);
     path(p);
-    // Pond is an inviting stopping point without overlapping the walking trail.
     pond(p,t);
+    garden(p,t);
     bushes(p,'meadow');
-    r(27,190,68,7,p.wood);r(31,183,60,8,p.ground);
-    for(let i=0;i<5;i++){
-      const x=36+i*11;
-      r(x,179,2,8,p.leafDark);r(x-4,176,10,5,p.leaf2);r(x,173,3,5,p.leaf3);
-    }
-    // Two berry patches, one beside the garden, another in the larger meadow.
     berryBush(p,50,230,32);
     berryBush(p,461,220,37);
     berryBush(p,586,233,34);
-
-    // The cottage's little postbox is directly beside the path and driveway.
     mailbox(p,237,216,t);
-    // Followable stones lead beyond the original postcard-size meadow.
     for(const [x,y,w] of [[406,235,23],[437,238,27],[475,240,26],
       [509,237,31],[547,232,28],[581,231,28],[617,233,31],[647,236,30]]){
-      r(x,y+2,w,8,p.ground);r(x+2,y,w-4,7,p.path);r(x+4,y+2,w-8,2,p.pathLight);
+      r(x,y+2,w,8,p.ground);r(x+2,y,w-4,7,p.path);
+      r(x+4,y+2,w-8,2,p.pathLight);
     }
     for(const [x,y,c] of [[430,180,p.flower3],[492,221,p.flower],
       [555,219,p.flower2],[612,229,p.flower3]]){
@@ -302,6 +362,7 @@
   }
   function grove(p,t){
     sky(p,t);land(p,true);
+    backgroundTrees(p,t,true);
 
     // A wider creek comes from behind the hill/trees and passes entirely
     // through the lower edge of the world. No cut-off stream sprites.
