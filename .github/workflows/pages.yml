@@ -23,6 +23,10 @@ jobs:
         run: |
           node --check app.js
           node --check pixel-world.js
+      - name: Test Cloudflare Worker brain
+        run: |
+          node --check cloudflare/src/index.js
+          node --test cloudflare/tests/worker.test.mjs
       - name: Check Python backend syntax
         run: |
           python -m py_compile backend/main.py backend/brain.py
