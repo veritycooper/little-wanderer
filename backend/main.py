@@ -385,3 +385,20 @@ def research(payload: Research, authorization: str | None = Header(default=None)
         record_discovery(world, found)
         write_state(world)
     return found
+
+class StatAdjustment(BaseModel):
+    stat: str
+    value: int = Field(ge=0, le=100)
+
+
+@app.post("/api/stats")
+def adjust_stat(payload: StatAdjustment, authorization: str | None = Header(default=None)):
+    require_token(authorization)
+    if payload.stat not in STATS:
+        raise HTTPException(status_code=400, detail="Unknown need")
+    with LOCK:
+        world = read_state()
+        world["stats"][payload.stat] = payload.value
+        write_state(world)
+    return {"ok": True}
+
