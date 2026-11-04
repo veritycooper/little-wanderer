@@ -298,7 +298,7 @@ function safeImport(data) {
   out.room = data.room === "kitchen" ? "kitchen" : "study";
   out.lastForageAt = 0;
   out.activity = clean(data.activity, 100) || fresh.activity;
-  out.x = Math.max(12, Math.min(78, Number(data.x) || 57));
+  out.x = Math.max(10, Math.min(150, Number(data.x) || 57));
   out.y = Math.max(52, Math.min(77, Number(data.y) || 64));
   out.memories = cap((Array.isArray(data.memories) ? data.memories : []).filter(x => typeof x === "string")
     .map(x => clean(x, 160)).filter(Boolean), 30);
