@@ -63,7 +63,7 @@ export function freshWorld() {
     stats: { hunger: 78, energy: 81, social: 74, joy: 84, curiosity: 68 },
     skills: { exploring: 3, reading: 2, friendship: 4, gardening: 1 },
     interests: Object.fromEntries(TOPICS.map((topic, i) => [topic, i < 4 ? 3 : 1])),
-    location: "meadow", lastOutdoor: "meadow", room: "study", activity: "Admiring the flowers",
+    location: "meadow", lastOutdoor: "meadow", room: "living", activity: "Admiring the flowers",
     x: 57, y: 64, night: false,
     messages: [{ id: uid(), from: "pet", text: "Hello! I found a quiet little cottage in the meadow. I hope we can be friends.", at: t }],
     journal: [{ id: uid(), title: "A new beginning", text: "Today I discovered a little place to call home.", at: t }],
@@ -189,7 +189,7 @@ export function activity(world, action) {
   world.activity = activityText;
   if (["rest", "feed", "read"].includes(selected)) {
     world.location = "cottage";
-    world.room = selected === "feed" ? "kitchen" : "study";
+    world.room = selected === "feed" ? "kitchen" : selected === "read" ? "study" : "living";
     if (selected === "rest") s.energy = clamp(s.energy + 32);
     if (selected === "feed") s.hunger = clamp(s.hunger + 36);
     if (selected === "read") { s.curiosity = clamp(s.curiosity + 14); world.skills.reading += 3; }
@@ -339,7 +339,7 @@ function safeImport(data) {
   }
   out.location = ["meadow", "grove", "cottage"].includes(data.location) ? data.location : "meadow";
   out.lastOutdoor = data.lastOutdoor === "grove" ? "grove" : "meadow";
-  out.room = data.room === "kitchen" ? "kitchen" : "study";
+  out.room = ["living","study","kitchen"].includes(data.room) ? data.room : "living";
   out.lastForageAt = 0;
   out.pendingResearch = null;
   out.activity = clean(data.activity, 100) || fresh.activity;
@@ -448,12 +448,12 @@ async function handle(request, env) {
       if (!Number.isFinite(where) || where < 10 || where > 150 ||
           !Number.isFinite(vertical) || vertical < 50 || vertical > 79)
         return fail(400, "Outside the explorable world", headers);
-      const room = data.room === "kitchen" ? "kitchen" : "study";
+      const room = ["living","study","kitchen"].includes(data.room) ? data.room : "living";
       await change(env, world => {
         world.location = destination;
         if (destination === "cottage") {
           world.room = room;
-          world.activity = room === "kitchen" ? "In the little kitchen" : "Settling into the study";
+          world.activity = room === "kitchen" ? "In the little kitchen" : room === "study" ? "Settling into the study" : "Resting in the living room";
         } else {
           world.lastOutdoor = destination;
           world.x = where;world.y = vertical;
@@ -461,7 +461,7 @@ async function handle(request, env) {
             : "Exploring the meadow";
         }
         world.plan = { action: destination === "cottage"
-          ? room === "kitchen" ? "Find something tasty" : "Read at my computer"
+          ? room === "kitchen" ? "Find something tasty" : room === "study" ? "Read at my computer" : "Relax by the fireplace"
           : "Explore a little farther",
           reason: "I want to take my time and look around this place." };
       });
