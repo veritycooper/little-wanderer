@@ -6,6 +6,9 @@
   const ctx=canvas.getContext('2d',{alpha:false});
   if(!ctx) return;
   const W=400,H=250;
+  const transitionCanvas=document.createElement('canvas');
+  transitionCanvas.width=W;transitionCanvas.height=H;
+  const transitionCtx=transitionCanvas.getContext('2d');
   const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
   ctx.imageSmoothingEnabled=false;
   const colours={
@@ -327,9 +330,8 @@
       const fresh=ctx.getImageData(0,0,W,H);
       scene(p,sceneBefore,t);
       ctx.save();ctx.globalAlpha=progress;
-      const temp=document.createElement('canvas');temp.width=W;temp.height=H;
-      temp.getContext('2d').putImageData(fresh,0,0);
-      ctx.drawImage(temp,0,0);ctx.restore();
+      transitionCtx.putImageData(fresh,0,0);
+      ctx.drawImage(transitionCanvas,0,0);ctx.restore();
     }else sceneBefore=null;
     const home=state.location==='cottage';
     creature(home?221:position.x,home?198:position.y,p,t,walking,home);
