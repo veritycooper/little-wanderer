@@ -1,0 +1,22 @@
+# Create the D1 database, then replace the placeholder database_id with the
+# UUID printed by: npx wrangler d1 create little-wanderer-db
+name = "little-wanderer-brain"
+main = "src/index.js"
+compatibility_date = "2026-10-20"
+
+[vars]
+ALLOWED_ORIGIN = "https://veritycooper.github.io"
+AI_MODEL = "@cf/meta/llama-3.2-3b-instruct"
+DAILY_AI_LIMIT = "24"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "little-wanderer-db"
+database_id = "REPLACE_WITH_YOUR_CLOUDFLARE_D1_DATABASE_UUID"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["* * * * *"]
