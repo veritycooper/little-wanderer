@@ -86,15 +86,13 @@ camera follows Pip smoothly as it walks, while the **Wander left/right**
 buttons and clicks on safe outdoor ground set a new destination. Woodland
 crossings follow the bridge instead of wading through the stream.
 
-- The cottage's redesigned roof sits in a continuous silhouette.
+- The cottage's redesigned roof sits in a continuous silhouette. A planted garden now grows to the left of the cottage, and background trees sway subtly in the wind.
 - Bushes are grounded in the grass; some are berry bushes you can click to
   forage for food and a journal entry, with a two-minute cooldown.
-- The woodland stream is wider, runs off the lower edge, passes beneath the
-  bridge and has stones and reeds along the banks.
+- The woodland stream is wider, runs off the lower edge, passes beneath the bridge and has stones and reeds along the banks. The meadow pond has an irregular edge and rock border.
 - The stepping-stone path continues across the whole woodland area.
-- The cottage now has a **study with a working computer hotspot** and a
-  **separate kitchen** with cupboards, sink, hob, table and berry bowl.
-- Pip automatically uses the kitchen when feeding and the study when reading.
+- The cottage has **three separate rooms**: a living room with a recessed fireplace, a dedicated study with a working computer hotspot, and a reworked asymmetrical kitchen with open shelves, sink, oven and a berry bowl.
+- Pip automatically uses the kitchen when feeding, the study when reading, and the living room when resting.
   Clicking the computer asks Pip to research a topic.
 - The meadow has a **little mailbox** with a flag and envelope indicator when
   a letter is waiting. Clicking it opens the Letters archive.
@@ -143,3 +141,7 @@ The interface continues to use its dusty-rose and plum colours, while the game i
 Use **Meadow** and **Woodland** above the scene to explore two areas. The woodland has a winding creek, log bridge, mushroom patches, trees and a small magical stone circle. The redrawn cottage has a curtained window, reading shelf, bed, woven rug and fireplace. Pip is now a subtle fae creature with delicate antlers, luminous turquoise eyes and a glowing tail. The environment transitions are deliberately slow.
 
 Existing saved letters, interests, journal and memories keep the original `little-wanderer-v1` storage key. Your last outdoor area is remembered in browser mode; for the optional backend, the scenery selector is a local viewing preference while the autonomous agent continues its backend routines.
+
+## Permission-first research
+
+Pip independently develops specific questions around interests such as mushrooms, wildflowers, stars and butterflies, but **never searches without your approval**. Open Little curiosities to approve or decline each pending question, or click the study computer to ask Pip what is on her mind. Approved source research writes a short question-centred note and Pip's own observation, not an encyclopedia dump. Existing D1 memories and journals are preserved.
