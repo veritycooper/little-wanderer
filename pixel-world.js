@@ -450,8 +450,91 @@
     // Potted fern
     r(155,129,19,20,p.wood);r(158,125,13,7,p.trunkLight);
     for(const dx of [-16,-8,0,9,17]){r(164+dx,119-Math.abs(dx)*.5,4,14,p.leaf);r(162+dx,111-Math.abs(dx)*.4,8,6,p.leaf2)}
+    // Pip's research and letter-writing desk: a real computer, not just a book prop.
+    r(181,168,104,12,p.furniture);
+    r(186,176,8,35,p.wood);r(268,176,8,35,p.wood);
+    r(184,164,99,6,p.furnitureLight);
+    r(205,113,54,45,p.dark);
+    r(209,117,46,36,p.woodLight);
+    r(212,120,40,31,p.night?'#426875':'#a8d8d9');
+    r(217,125,21,3,p.glow);r(217,132,30,3,p.leaf2);
+    r(217,139,16,3,p.woodLight);
+    r(228,158,7,8,p.furniture);r(220,165,24,4,p.furnitureLight);
+    // Keyboard and a little lamp.
+    r(210,170,44,7,p.dark);r(214,171,36,3,p.wall);
+    r(191,133,4,34,p.furniture);r(184,129,19,7,p.glow);
+    r(189,126,9,4,p.wall);
+    r(270,145,8,21,p.wood);r(267,139,14,8,p.woodLight);
+    r(267,135,4,5,p.flower3);
+    if(state.activity&&/read|research|letter|computer|writing/i.test(state.activity)){
+      r(215,125,7,3,p.glow);
+      if(Math.sin(t*.002)>0)r(241,137,3,3,p.glow);
+    }
     // Floating dust motes
     if(p.night)for(let i=0;i<8;i++){const x=160+hash(i,55)*116,y=18+hash(i,56)*125;if(Math.sin(t*.002+i)>.1)r(x,y,2,2,p.glow)}
+  }
+  function kitchen(p,t){
+    // A separate room with warm cabinets, working stove, sink and a real table.
+    r(0,0,400,250,p.indoorWall);
+    for(let x=0;x<400;x+=45)r(x,0,2,164,p.indoorWall2);
+    r(0,0,400,14,p.wood);r(0,151,400,13,p.wood);
+    r(0,164,400,86,p.floor);
+    for(let x=0;x<400;x+=36){r(x+2,166,2,84,p.furniture);r(x+8,180,26,2,p.floorLight)}
+    for(let y=186;y<250;y+=22)r(0,y,400,2,p.furniture);
+    // Kitchen window with curtains and hills behind.
+    r(36,36,102,87,p.dark);r(40,40,94,78,p.woodLight);
+    r(44,44,86,70,p.night?'#405c79':'#91cddd');
+    polygon([[45,104],[78,77],[106,92],[129,78],[129,114],[45,114]],p.hillFar);
+    r(84,44,5,74,p.wood);r(45,81,84,5,p.wood);
+    r(37,35,10,85,p.leaf);r(129,35,10,85,p.leaf2);
+    r(33,121,110,7,p.furnitureLight);
+
+    // Upper cupboards, shelves, labelled jam jars.
+    for(const x of [160,218,276]){
+      r(x,34,52,57,p.furniture);
+      r(x+4,38,44,49,p.woodLight);
+      r(x+23,57,4,6,p.glow);
+      r(x+8,40,31,4,p.wallShadow);
+    }
+    r(154,100,199,8,p.furnitureLight);
+    for(const [x,c] of [[164,p.flower],[180,p.flower3],[198,p.leaf2],
+      [218,p.flower],[237,p.flower2],[253,p.flower3]]){
+      r(x,81,11,15,p.wall);r(x+2,78,7,4,p.wood);
+      r(x+2,86,7,6,c);r(x+3,86,3,2,p.glow);
+    }
+    // Counter units with a sink and little cooking hob.
+    r(152,128,222,48,p.furniture);
+    for(let x=160;x<=341;x+=47){
+      r(x,134,42,36,p.woodLight);r(x+35,146,3,7,p.furniture);
+    }
+    r(145,120,233,13,p.furnitureLight);
+    r(166,121,65,6,p.stoneLight);
+    r(181,121,40,5,p.water);r(195,111,3,10,p.furniture);
+    r(195,110,17,3,p.furnitureLight);r(209,113,3,5,p.furnitureLight);
+    r(270,111,79,9,p.dark);
+    for(const x of [281,307,333]){r(x,113,13,5,p.wood);r(x+5,113,3,2,p.glow)}
+    r(287,99,37,12,p.wallShadow);r(293,91,25,12,p.furnitureLight);
+    // Hearth-oven with visible handle and knobs.
+    r(272,137,76,38,p.dark);r(278,143,64,27,p.stone);
+    r(289,147,43,17,p.window);r(285,136,52,3,p.woodLight);
+    for(const x of [284,312,335])r(x,131,4,4,p.wall);
+    // Small round table, bread and bowl of real berries.
+    oval(105,203,61,17,p.furniture);
+    oval(105,198,60,16,p.woodLight);
+    r(98,207,13,36,p.furniture);
+    oval(108,193,21,7,p.wall);
+    for(const [dx,dy,c] of [[-9,0,'#c4546f'],[0,-3,'#aa4961'],
+      [8,0,'#e98a91'],[-3,3,'#bd6279'],[12,3,'#a54762']]){
+      r(108+dx,191+dy,6,5,c);
+    }
+    r(62,191,22,6,p.path);r(67,185,12,7,p.woodLight);
+    // Dining chairs against table edge.
+    r(47,208,14,31,p.wood);r(42,199,23,8,p.woodLight);
+    r(154,206,14,31,p.wood);r(150,198,22,8,p.woodLight);
+    // Houseplant by the back wall.
+    r(368,143,22,22,p.wood);r(371,140,16,7,p.trunkLight);
+    for(const dx of [-16,-7,1,12,19])r(378+dx,129-Math.abs(dx)*.35,8,16,p.leaf2);
+    if(p.night)r(362,88,8,9,p.glow);
   }
   function creature(x,y,p,t,walk,home){
     const yy=Math.round(y+(walk?Math.sin(t*.008)*1.2:Math.sin(t*.0018)*.8));
@@ -486,88 +569,141 @@
     }
   }
   const isOutside=loc=>loc!=='cottage';
-  let state={location:'meadow',night:false,x:57,y:64};
-  let position={x:220,y:195},target={x:220,y:195};
-  let last=0,lastWander=0,walking=false,sceneBefore=null,fadeStart=0;
-  const screenPoint=(x,y)=>{
-    let px=36+Math.max(10,Math.min(79,Number(x)||57))*3.22;
-    let py=126+Math.max(50,Math.min(79,Number(y)||64))*.93;
+  let state={location:'meadow',room:'study',night:false,x:57,y:64,unread:false};
+  let position={x:220,y:205},target={x:220,y:205};
+  let camera=0,mailPulse=0;
+  let last=0,lastWander=0,walking=false;
+  const worldPoint=(x,y)=>{
+    const nx=Number.isFinite(Number(x))?Number(x):57;
+    const ny=Number.isFinite(Number(y))?Number(y):64;
+    const px=36+(Math.max(10,Math.min(150,nx))-10)*4;
+    const py=126+Math.max(50,Math.min(79,ny))*.93;
     if(state.location==='grove'){
-      // Keep the creature in the actual woodland clearing, away from the stream,
-      // bridge rail and decorative rock circle.
-      px=Math.max(153,Math.min(270,px));
-      py=Math.max(200,Math.min(233,py));
-      if(px<180&&py>216)px=183;
-    }else if(state.location==='meadow'){
-      if(px<184)py=Math.max(py,211); // Outside the cottage
-      if(px>279&&py<236){px=266;py=Math.max(py,205)} // Pond
+      // Keep the stroll on the safe bank or the far-side footpath.
+      return {x:Math.max(45,Math.min(625,px)),
+        y:Math.max(203,Math.min(231,py))};
     }
-    return {x:px,y:Math.min(239,py)};
+    if(state.location==='meadow'){
+      const safeY=Math.max(205,Math.min(232,py));
+      return {x:Math.max(47,Math.min(623,px)),
+        y:px>272&&px<397?Math.max(229,safeY):safeY};
+    }
+    return {x:220,y:197};
   };
+  function visit(x,y){
+    const point=worldPoint(x,y);
+    target={...point};
+    lastWander=performance.now();
+    return {...target};
+  }
   function update(dt,t){
     if(!isOutside(state.location)){walking=false;return}
     const dx=target.x-position.x,dy=target.y-position.y,dist=Math.hypot(dx,dy);
     if(dist>.45&&!motion.matches){
-      const step=Math.min(dist,dt*11.5);position.x+=dx/dist*step;position.y+=dy/dist*step;walking=true;
+      const step=Math.min(dist,dt*42);
+      position.x+=dx/dist*step;position.y+=dy/dist*step;
+      walking=true;
     }else walking=false;
-    if(!walking&&!motion.matches&&t-lastWander>17000){
+    if(!walking&&!motion.matches&&t-lastWander>7000){
       lastWander=t;
-      const grove=state.location==='grove';
-      const nx=Math.max(grove?158:187,Math.min(grove?265:274,position.x+rand(-27,27)));
-      const ny=Math.max(grove?196:211,Math.min(grove?232:237,position.y+rand(-13,13)));
+      // Free-roam is local between each persisted destination update.
+      const nx=Math.max(46,Math.min(618,position.x+rand(-64,64)));
+      const ny=Math.max(205,Math.min(231,position.y+rand(-18,18)));
       target={x:nx,y:ny};
     }
+    const goal=Math.max(0,Math.min(WORLD_W-W,position.x-W*.47));
+    camera+=(goal-camera)*Math.min(1,dt*3.3);
+    if(Math.abs(goal-camera)<.12)camera=goal;
   }
   function scene(p,loc,t){
-    if(loc==='cottage')interior(p,t);
-    else if(loc==='grove')grove(p,t);
+    if(loc==='cottage'){
+      if(state.room==='kitchen')kitchen(p,t);
+      else interior(p,t);
+    }else if(loc==='grove')grove(p,t);
     else meadow(p,t);
   }
   function render(t){
     const dt=Math.min(.075,Math.max(0,(t-last)/1000||0));last=t;
     const p=state.night?colours.night:colours.day;
     update(dt,t);
+    ctx.save();
+    if(isOutside(state.location))ctx.translate(-Math.round(camera),0);
     scene(p,state.location,t);
-    if(sceneBefore&&t-fadeStart<1100&&!motion.matches){
-      const progress=Math.min(1,(t-fadeStart)/1100);
-      // Fade in the new location across the old one.
-      const fresh=ctx.getImageData(0,0,W,H);
-      scene(p,sceneBefore,t);
-      ctx.save();ctx.globalAlpha=progress;
-      transitionCtx.putImageData(fresh,0,0);
-      ctx.drawImage(transitionCanvas,0,0);ctx.restore();
-    }else sceneBefore=null;
-    const home=state.location==='cottage';
-    creature(home?221:position.x,home?198:position.y,p,t,walking,home);
-    moveHitbox();
+    const home=!isOutside(state.location);
+    creature(home?(state.room==='kitchen'?223:315):position.x,
+      home?(state.room==='kitchen'?206:207):position.y,p,t,walking,home);
+    ctx.restore();
+    moveHitboxes();
     if(!motion.matches)requestAnimationFrame(render);
   }
-  function moveHitbox(){
+  function placeOverlay(id,x,y,width=28,height=30){
+    const b=document.getElementById(id);
+    if(!b)return;
+    b.style.left=((x-camera)/W*100)+'%';
+    b.style.top=((y-16)/H*100)+'%';
+    b.style.width=(width/W*100)+'%';
+    b.style.height=(height/H*100)+'%';
+    b.hidden=state.location!=='meadow';
+  }
+  function moveHitboxes(){
     const b=document.getElementById('petInteract');
     const bubble=document.getElementById('bubble');
-    const x=state.location==='cottage'?221:position.x;
-    const y=state.location==='cottage'?198:position.y;
+    const home=!isOutside(state.location);
+    const x=home?(state.room==='kitchen'?223:315):position.x-camera;
+    const y=home?(state.room==='kitchen'?206:207):position.y;
     if(b){b.style.left=x/W*100+'%';b.style.top=(y-9)/H*100+'%'}
-    if(bubble){bubble.style.left=Math.max(16,Math.min(85,x/W*100))+'%';bubble.style.bottom=Math.max(17,Math.min(67,(H-y+40)/H*100))+'%'}
+    if(bubble){
+      bubble.style.left=Math.max(16,Math.min(85,x/W*100))+'%';
+      bubble.style.bottom=Math.max(17,Math.min(67,(H-y+40)/H*100))+'%';
+    }
+    placeOverlay('mailboxInteract',237,179,37,51);
+    const cottage=document.getElementById('cottage');
+    if(cottage&&state.location==='meadow'){
+      cottage.style.left=((55-camera)/W*100)+'%';
+      cottage.style.top='23%';
+      cottage.style.width=(159/W*100)+'%';
+      cottage.style.height='48%';
+      cottage.hidden=(55-camera>W||214-camera<0);
+    }
+    const world=document.getElementById('world');
+    if(world)world.style.cursor=home?'default':'crosshair';
   }
   function setState(incoming,initial=false){
     if(!incoming)return;
-    const previous=state.location;
-    const updated={...state,...incoming};
-    if(!['meadow','grove','cottage'].includes(updated.location))updated.location='meadow';
-    state=updated;
-    const point=screenPoint(state.x,state.y);
-    if(initial||!last){position={...point};target={...point}}
-    else if(point.x!==target.x||point.y!==target.y){
-      target={...point};lastWander=performance.now();
+    const previousLoc=state.location;
+    const oldX=state.x,oldY=state.y;
+    const oldRoom=state.room;
+    state={...state,...incoming};
+    if(!['meadow','grove','cottage'].includes(state.location))state.location='meadow';
+    if(!['study','kitchen'].includes(state.room))state.room='study';
+    const point=worldPoint(state.x,state.y);
+    if(initial||!last){
+      position={...point};target={...point};
+      camera=Math.max(0,Math.min(WORLD_W-W,position.x-W*.47));
+    }else if(previousLoc!==state.location){
+      position={...point};target={...point};
+      camera=Math.max(0,Math.min(WORLD_W-W,position.x-W*.47));
+      lastWander=performance.now();
+    }else if(state.x!==oldX||state.y!==oldY){
+      target={...point};
+      lastWander=performance.now();
     }
-    if(previous!==state.location){
-      sceneBefore=previous;fadeStart=performance.now();lastWander=fadeStart;
-      if(previous==='cottage'||state.location==='cottage'){position={...point};target={...point}}
-    }
+    if(oldRoom!==state.room)lastWander=performance.now();
     if(motion.matches)render(performance.now());
   }
-  window.PixelWorld={setState,getPosition:()=>({...position}),getScene:()=>state.location};
+  function letterSent(){
+    mailPulse=performance.now()+2400;
+    if(motion.matches)render(performance.now());
+  }
+  window.PixelWorld={
+    setState,visit,letterSent,
+    getPosition:()=>({...position}),
+    getCamera:()=>camera,
+    getScene:()=>state.location,
+    worldSize:WORLD_W,
+    toWorld:(screenX,screenY)=>({x:screenX+camera,y:screenY}),
+    toStateX:worldX=>Math.max(10,Math.min(150,(worldX-36)/4+10))
+  };
   if(motion.matches)render(0);
   else requestAnimationFrame(render);
 })();
