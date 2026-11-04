@@ -9,7 +9,7 @@ A small, evolving virtual companion with a cosy cottage, its own routines, memor
 - A hand-drawn, responsive little world with a cottage, pond, garden, day/night mode, and a pet that wanders or goes home.
 - Autonomous needs (hunger, energy, social, joy, curiosity), interests, routines, decisions, and activities.
 - A gentle conversation inbox: your pet doesn't answer instantly; its messages arrive after a realistic delay.
-- A journal that records actual world events, plus discoveries with **real Wikipedia source links**.
+- A journal that records actual world events, plus discoveries with **real Wikipedia source links**.\n- An activity trail showing reasons for decisions and a visible next-step intention.\n- A manually managed memory shelf: you can add or delete memories; ordinary letters are not automatically saved as permanent personal memories.
 - Meaningful progress in exploration, conversation, reading, and gardening; these counters are *not* presented as machine-learning model training.
 - Browser-only mode (saves to `localStorage`, no account or API key required).
 - Optional Python FastAPI + SQLite backend with an always-running activity loop, private state and durable memories.
@@ -18,9 +18,9 @@ A small, evolving virtual companion with a cosy cottage, its own routines, memor
 
 ## Get it on GitHub Pages
 
-In **Settings → Pages**, choose **Deploy from a branch**, branch **main**, folder **/(root)**, then Save.
+In **Settings → Pages**, select **GitHub Actions** as the build and deployment source. The included workflow checks the JavaScript and Python syntax and publishes the site on each push to `main`. You must enable Pages once from your account; the GitHub integration cannot enable the feature for you.
 
-The browser version will be available at **https://veritycooper.github.io/little-wanderer/**. This URL works only after Pages has been enabled and deployment has completed.
+The browser version will be available at **https://veritycooper.github.io/little-wanderer/** once Pages is enabled and the deployment succeeds. If it is not yet live, check the latest **Actions → Publish Little Wanderer** run.
 
 ## Run it locally
 
@@ -54,9 +54,9 @@ In the site's **Settings**, enter the backend URL `http://localhost:8001` and yo
 
 ### Data and privacy
 
-This project has no analytics or accounts. Browser-mode data stays in that browser unless you export it. Backend mode stores messages, memories and journal entries in a local SQLite database at `DATA_DIR`. The backend requires the `PET_API_TOKEN` for every pet endpoint. Do not publish a backend URL with a weak token, put tokens in the repo, or treat `ALLOWED_ORIGINS` as authentication. If you use a hosted language model, chat excerpts are sent to that provider for responses; Wikipedia research requests are sent to Wikipedia.
+This project has no analytics or accounts. Browser-mode data stays in that browser unless you export it. The optional backend URL and access token are also stored in browser localStorage, so only configure an endpoint on a personal device you trust. Backend mode stores messages, memories and journal entries in a local SQLite database at `DATA_DIR`. The backend requires the `PET_API_TOKEN` for every pet endpoint. Do not publish a backend URL with a weak token, put tokens in the repo, or treat `ALLOWED_ORIGINS` as authentication. If you use a hosted language model, chat excerpts are sent to that provider for responses; Wikipedia research requests are sent to Wikipedia.
 
-**Real research vs. learning:** Discoveries fetch real Wikipedia articles, cite their page URLs, and record what the pet read. Topic preferences and recalled conversation facts can change with experience. Skill meters count activities. This is adaptive agent behaviour, **not automatic retraining of the language model's weights**. There is no arbitrary web crawling or code execution.
+**Real research vs. learning:** Discoveries fetch real Wikipedia articles, cite their page URLs, and record what the pet read. Topic preferences and user-approved memory notes can change with experience. Skill meters count activities. This is adaptive agent behaviour, **not automatic retraining of the language model's weights**. There is no arbitrary web crawling or code execution.
 
 ## Project layout
 
