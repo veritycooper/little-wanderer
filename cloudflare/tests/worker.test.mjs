@@ -180,3 +180,81 @@ test("foraging is grounded in the woodland, persists needs and has a cooldown",a
  assert.ok(world.journal.some(note=>/berries/i.test(note.title)));
  assert.equal((await worker.fetch(req("/api/forage","POST",{}),e)).status,429);
 });
+
+
+test("automatic curiosity only asks: scheduled tasks never fetch research without consent",async()=>{
+ const e=env();
+ await read(e); // create world
+ const raw=JSON.parse(e.DB.row.data);
+ raw.nextResearch=0;
+ raw.nextAction=Date.now()+360000;
+ e.DB.row.data=JSON.stringify(raw);
+ const originalFetch=globalThis.fetch;
+ let externalCalls=0;
+ globalThis.fetch=async()=>{externalCalls++;throw Error("An unapproved network call")};
+ try{
+   const jobs=[];
+   await worker.scheduled({},e,{waitUntil(p){jobs.push(p)}});
+   await Promise.all(jobs);
+   const state=await (await read(e)).json();
+   assert.equal(externalCalls,0);
+   assert.ok(state.pendingResearch?.question);
+   assert.ok(state.pendingResearch?.topic);
+   assert.equal(state.discoveries.length,0);
+ }finally{globalThis.fetch=originalFetch}
+});
+
+test("research requires matching permission; rejection preserves no discoveries",async()=>{
+ const e=env();
+ assert.equal((await worker.fetch(req("/api/research","POST",{topic:"mushrooms"}),e)).status,403);
+ const proposed=await worker.fetch(req("/api/research/propose","POST",{}),e);
+ assert.equal(proposed.status,200);
+ const item=(await proposed.json()).proposal;
+ assert.ok(item.question.includes("?"));
+ assert.ok(item.searchTerm);
+ assert.equal((await worker.fetch(req("/api/research/decision","POST",
+   {id:item.id,approve:"yes"}),e)).status,400);
+ assert.equal((await worker.fetch(req("/api/research/decision","POST",
+   {id:"incorrect-id",approve:true}),e)).status,409);
+ assert.equal((await worker.fetch(req("/api/research/decision","POST",
+   {id:item.id,approve:false}),e)).status,200);
+ const state=await (await read(e)).json();
+ assert.equal(state.pendingResearch,null);
+ assert.deepEqual(state.discoveries,[]);
+});
+
+test("approved question creates concise sourced curiosity and enters the study",async()=>{
+ const e=env();
+ const r=await worker.fetch(req("/api/research/propose","POST",{}),e);
+ const idea=(await r.json()).proposal;
+ const originalFetch=globalThis.fetch;
+ let queries=0;
+ globalThis.fetch=async input=>{
+   queries++;
+   assert.ok(String(input).startsWith("https://en.wikipedia.org/w/api.php"));
+   return new Response(JSON.stringify({
+     query:{pages:[{title:"Butterfly",extract:"Butterflies use their senses to find flowers and food."}]}
+   }),{status:200,headers:{"Content-Type":"application/json"}});
+ };
+ try{
+   const res=await worker.fetch(req("/api/research/decision","POST",
+     {id:idea.id,approve:true}),e);
+   assert.equal(res.status,200);
+   const state=await (await read(e)).json();
+   assert.equal(queries,1);
+   assert.equal(state.pendingResearch,null);
+   assert.equal(state.discoveries.length,1);
+   assert.equal(state.discoveries[0].question,idea.question);
+   assert.equal(state.discoveries[0].thought,idea.thought);
+   assert.ok(state.discoveries[0].summary.length<=210);
+   assert.equal(state.room,"study");
+   assert.equal(state.location,"cottage");
+ }finally{globalThis.fetch=originalFetch}
+});
+
+test("rest, reading and meals have three distinct cottage rooms",()=>{
+ const world=freshWorld();
+ activity(world,"rest");assert.equal(world.room,"living");
+ activity(world,"read");assert.equal(world.room,"study");
+ activity(world,"feed");assert.equal(world.room,"kitchen");
+});
