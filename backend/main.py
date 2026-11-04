@@ -152,7 +152,7 @@ def activity(world, requested=None):
     world["plan"] = {"action": "Check my needs", "reason": "I will choose again based on how I am feeling."}
     if random.random() < .22:
         note(world, "A little " + action, world["activity"] + ". I want to remember these small moments.")
-    world["nextAction"] = stamp() + random.randrange(25_000, 60_000)
+    world["nextAction"] = stamp() + random.randrange(55_000, 105_000)
 
 
 def wikipedia(topic: str) -> dict:
