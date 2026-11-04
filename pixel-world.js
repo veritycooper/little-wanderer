@@ -69,14 +69,49 @@
     }
   }
   function tree(x,y,s,p,t,front=false){
-    ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
-    const sway=Math.round(Math.sin(t*.0005+x)*1.1);
-    r(-6,-67,13,71,p.trunk);r(-1,-64,4,65,p.trunkLight);
-    r(-32+sway,-102,64,28,p.leafDark);r(-40+sway,-89,78,23,p.leaf);r(-35+sway,-72,70,23,p.leaf2);
-    r(-24+sway,-116,50,18,p.leaf);r(-15+sway,-125,32,11,p.leaf2);
-    r(-31+sway,-99,15,12,p.leaf3);r(10+sway,-112,15,11,p.leaf3);
-    r(19+sway,-83,15,9,p.leaf3);r(-28+sway,-66,13,10,p.leaf);
-    if(front){r(-32+sway,-75,11,9,p.leafDark)}
+    ctx.save();
+    ctx.translate(Math.round(x),Math.round(y));
+    ctx.scale(s,s);
+    const sway=Math.round(Math.sin(t*.00045+x)*0.8);
+
+    // The base of every tree is the actual ground point (x,y).
+    oval(0,1,19,5,p.grassShade);
+    r(-12,-3,24,5,p.ground);
+    r(-8,-7,16,12,p.trunk);
+    r(-4,-55,9,52,p.trunk);
+    r(-1,-53,3,48,p.trunkLight);
+    r(-13,-5,7,5,p.trunk);
+    r(7,-5,8,5,p.trunk);
+    r(-11,-21,6,4,p.trunk);
+    r(5,-28,8,4,p.trunkLight);
+
+    // Dark coherent silhouette, then overlapping mid-tone foliage clusters.
+    r(-25+sway,-90,51,50,p.leafDark);
+    r(-32+sway,-79,65,32,p.leafDark);
+    r(-23+sway,-106,47,23,p.leafDark);
+    r(-16+sway,-117,34,15,p.leafDark);
+    r(-35+sway,-67,70,17,p.leafDark);
+    r(-27+sway,-96,55,24,p.leaf);
+    r(-32+sway,-78,64,23,p.leaf);
+    r(-24+sway,-109,48,21,p.leaf2);
+    r(-14+sway,-120,31,13,p.leaf2);
+    r(-29+sway,-65,57,14,p.leaf2);
+    r(-19+sway,-99,29,12,p.leaf3);
+    r(9+sway,-90,18,12,p.leaf3);
+    r(-30+sway,-75,16,8,p.leaf3);
+    r(-4+sway,-115,13,6,p.leaf3);
+    r(18+sway,-66,10,7,p.leaf);
+
+    if(front){
+      r(-35+sway,-60,15,11,p.leaf);
+      r(20+sway,-62,15,11,p.leaf2);
+      r(-27+sway,-54,12,6,p.leafDark);
+    }
+    // Tufts at ground level hide any otherwise hard "stuck on" trunk edge.
+    r(-15,-4,6,6,p.leafDark);
+    r(10,-5,7,7,p.leaf);
+    r(-21,-2,9,3,p.grassDeep);
+    r(14,-2,9,3,p.grassDeep);
     ctx.restore();
   }
   function flowers(p,area){
@@ -90,10 +125,26 @@
     r(x-4,y-14,4,4,c);r(x+2,y-14,4,4,c);r(x-1,y-18,4,5,c);r(x-1,y-12,4,4,p.flower2);
   }
   function bushes(p,area){
-    const clumps=area==='grove'?[[97,169],[184,159],[258,173],[329,170]]:[[20,174],[196,167],[387,168]];
-    for(const [x,y] of clumps){
-      r(x-13,y-6,25,13,p.leafDark);r(x-19,y-11,37,10,p.leaf);r(x-10,y-16,23,10,p.leaf2);
-      r(x-5,y-16,8,4,p.leaf3);
+    const clusters=area==='grove'
+      ? [[46,201,32],[113,183,29],[251,185,35],[385,201,27]]
+      : [[22,177,28],[196,170,30],[385,172,27]];
+    for(const [x,y,w] of clusters){
+      // Every bush has a ground shadow and an irregular, connected silhouette.
+      const left=x-Math.floor(w/2);
+      oval(x,y+1,w*.65,4,p.grassShade);
+      r(left,y-9,w,12,p.leafDark);
+      r(left-5,y-10,12,10,p.leafDark);
+      r(left+w-6,y-11,12,10,p.leafDark);
+      r(left+4,y-17,w-8,12,p.leaf);
+      r(left-3,y-13,15,10,p.leaf);
+      r(left+w-12,y-15,16,10,p.leaf2);
+      r(left+9,y-22,Math.max(12,w-17),9,p.leaf2);
+      r(left+3,y-12,10,6,p.leaf3);
+      r(left+w-16,y-17,11,6,p.leaf3);
+      r(left+12,y-23,9,4,p.leaf3);
+      // Small breaks in foliage make the individual leaf clumps read clearly.
+      r(left+4,y-4,5,3,p.leafDark);
+      r(left+w-10,y-3,5,3,p.leafDark);
     }
   }
   function fence(x,y,n,p){
@@ -167,119 +218,101 @@
     sky(p,t);
     land(p,true);
 
-    // Distant woodland layers: leave a clear centre, frame the view with trees.
-    for(const [x,y,s] of [[44,146,.55],[110,147,.55],[228,144,.56],[300,153,.52]]){
+    // Woodland trees now all have their feet planted on visible ground:
+    // distant trunks at the rear grass edge, large trunks in the foreground.
+    for(const [x,y,s] of [[65,171,.54],[142,171,.52],[224,169,.49],[295,171,.53]]){
       tree(x,y,s,p,t);
     }
-    // Broad overhead boughs, with the branches tucked into the scene corners.
-    r(0,0,70,15,p.leafDark);
-    r(0,15,38,11,p.leaf);
-    r(22,0,86,10,p.leaf2);
-    r(328,0,72,15,p.leafDark);
-    r(366,13,34,40,p.leaf);
-    r(348,0,30,9,p.leaf2);
+    tree(21,207,.89,p,t,true);
+    tree(387,207,.94,p,t,true);
+    // Midground trees give depth but never end above the grass.
+    tree(95,184,.54,p,t);
+    tree(267,178,.51,p,t);
 
-    // Rounded clearing: trees to either side, room for Pip and the path.
-    r(43,158,316,8,p.grassDeep);
-    r(71,165,254,8,p.grass);
-    tree(18,179,.83,p,t,true);
-    tree(384,178,.91,p,t,true);
-    // A little moss and undergrowth around the tree roots.
-    for(const [x,y,w] of [[5,184,45],[65,172,30],[342,173,41],[363,205,35]]){
-      r(x,y,w,7,p.leafDark);
-      r(x+3,y-4,w-6,7,p.leaf2);
-      r(x+8,y-8,Math.max(8,w-18),5,p.leaf3);
-    }
+    bushes(p,'grove');
 
-    // The creek follows a single winding right-hand channel.
-    // Banks, water and highlights use the same silhouette, not stacked boxes.
-    const outer=[[316,163],[329,165],[325,185],[335,198],[338,214],
-      [357,235],[381,250],[335,250],[321,233],[307,215],
-      [304,198],[306,183]];
-    const inner=[[318,168],[325,169],[320,186],[331,199],[334,213],
-      [351,237],[369,250],[346,250],[327,230],[315,213],
-      [312,197],[313,183]];
-    polygon(outer,p.grassShade);
-    polygon(inner,p.waterDeep);
-    polygon([[319,170],[323,171],[318,187],[329,202],[331,214],
-      [347,239],[360,250],[350,250],[329,228],[318,211],
-      [314,197],[315,185]],p.water);
-    for(const [x,y,w] of [[316,180,7],[316,195,8],[321,207,9],
-      [335,233,12],[346,244,9]]){
+    // Natural creek bending down the right edge; foliage is BEHIND the water.
+    polygon([[320,169],[332,170],[327,185],[337,200],[340,214],
+      [359,235],[381,250],[334,250],[322,235],[307,214],
+      [305,198],[308,183]],p.grassShade);
+    polygon([[320,173],[329,175],[323,188],[333,201],[337,217],
+      [354,239],[371,250],[344,250],[327,233],[314,214],
+      [311,197],[315,184]],p.waterDeep);
+    polygon([[321,175],[326,178],[320,188],[330,202],[333,217],
+      [350,240],[361,250],[349,250],[330,231],[317,212],
+      [314,195],[317,185]],p.water);
+    for(const [x,y,w] of [[320,183,7],[318,197,8],[324,210,11],
+      [337,232,11],[347,243,9]]){
       r(x+Math.round(Math.sin(t*.0008+x)*2),y,w,2,p.waterLight);
     }
-    // Reeds belong on the stream bank rather than in the water.
-    for(const [x,y] of [[301,176],[304,190],[349,222],[377,241]]){
+    for(const [x,y] of [[307,182],[306,193],[363,226],[376,237]]){
       r(x,y-10,2,10,p.leafDark);
       r(x+2,y-5,3,5,p.leaf2);
     }
 
-    // One continuous trail, curving towards the bridge.
-    // Stones grow wider as they approach the foreground/right bank.
-    for(const [x,y,w] of [[134,169,23],[151,181,27],[171,195,29],
-      [192,209,32],[217,218,37],[246,221,33],[273,218,29]]){
+    // One legible stepping-stone trail from the clearing towards the bridge.
+    for(const [x,y,w] of [[144,190,23],[155,202,26],[173,215,30],
+      [197,226,33],[224,228,35],[252,222,34],[275,217,24]]){
       r(x-1,y+2,w+2,9,p.ground);
       r(x,y,w,8,p.stone);
       r(x+3,y+1,w-6,5,p.stoneLight);
       r(x+5,y+5,w-10,2,p.stone);
     }
 
-    // Bridge spans BOTH banks at the same height, across the actual creek.
-    r(281,216,72,8,p.trunk);
-    r(284,212,66,9,p.wood);
-    for(let x=286;x<=344;x+=9){
+    // A bridge across BOTH stream banks at a consistent height.
+    r(286,216,67,8,p.trunk);
+    r(288,212,63,8,p.wood);
+    for(let x=291;x<=342;x+=9){
       r(x,213,7,6,p.woodLight);
       r(x+2,215,2,3,p.trunkLight);
     }
-    r(287,198,5,19,p.trunk);
-    r(344,198,5,19,p.trunk);
-    r(287,198,62,5,p.woodLight);
-    r(292,205,53,3,p.wood);
-    r(282,222,73,3,p.ground);
+    r(289,199,5,17,p.trunk);
+    r(346,199,5,17,p.trunk);
+    r(289,198,62,5,p.woodLight);
+    r(294,205,52,3,p.wood);
+    r(285,222,69,3,p.ground);
 
-    // A small mossy stone circle to the left of the footpath.
-    for(const [x,y,h] of [[76,213,12],[92,202,17],[111,204,14],
-      [125,214,12],[109,229,10],[85,229,11]]){
+    // Ancient stones on the LEFT, well away from Pip's route.
+    for(const [x,y,h] of [[71,217,11],[88,207,15],[106,208,14],
+      [120,218,11],[105,231,9],[82,231,10]]){
       r(x-5,y+2,13,5,p.grassShade);
       r(x-3,y-h+2,9,h,p.stone);
       r(x,y-h,4,8,p.stoneLight);
       r(x-2,y-h+4,2,3,p.leaf3);
     }
-    r(100,219,5,10,p.flower3);
-    r(102,215,3,4,p.glow);
+    r(96,218,5,10,p.flower3);
+    r(98,214,3,4,p.glow);
 
-    // A sign away from the stones and the creature's main route.
-    r(54,170,5,29,p.trunk);
-    r(44,166,38,16,p.trunk);
-    r(46,168,34,12,p.woodLight);
-    r(51,173,18,3,p.wall);
-    r(71,172,5,3,p.wall);
-    r(53,183,6,17,p.trunk);
+    // Wooden sign sits in the clearing rather than floating above shrubs.
+    r(52,184,5,22,p.trunk);
+    r(43,177,37,15,p.trunk);
+    r(45,179,33,11,p.woodLight);
+    r(51,183,18,3,p.wall);
+    r(70,183,5,3,p.wall);
+    r(51,204,9,3,p.grassShade);
 
-    // Ground cover in coherent patches, avoiding the creek and bridge.
-    bushes(p,'grove');
+    // Group wildflowers in small beds. Don't blanket the trail with sprites.
     const beds=[
-      [[31,218],[47,228],[58,209],[65,238]],
-      [[146,232],[161,241],[179,228]],
-      [[221,241],[241,237],[258,245]],
-      [[362,228],[378,232],[391,215]]
+      [[32,228],[49,236],[56,222]],
+      [[140,240],[157,244],[177,238]],
+      [[226,244],[245,242],[263,246]],
+      [[367,229],[382,236],[394,224]]
     ];
-    let colourIndex=0;
+    let i=0;
     for(const bed of beds){
       for(const [x,y] of bed){
-        flower(x,y,p,[p.flower,p.flower2,p.flower3][colourIndex++%3]);
+        flower(x,y,p,[p.flower,p.flower2,p.flower3][i++%3]);
       }
     }
-    for(const [x,y,col] of [[36,205,p.flower3],[57,226,p.flower],
-      [122,236,p.flower3],[231,188,p.flower2],[264,189,p.flower3],
-      [374,238,p.flower]]){
-      mushroom(x,y,p,col);
+    for(const [x,y,c] of [[34,211,p.flower3],[55,226,p.flower],
+      [126,236,p.flower3],[228,189,p.flower2],[252,190,p.flower3],
+      [375,240,p.flower]]){
+      mushroom(x,y,p,c);
     }
-    // Fireflies only at night; tiny sparkle rather than emoji.
     if(p.night){
-      for(let i=0;i<7;i++){
-        const x=60+hash(i,87)*300, y=159+hash(i,88)*67;
-        if(Math.sin(t*.002+i*2.3)>.12)r(x,y,2,2,p.glow);
+      for(let j=0;j<7;j++){
+        const x=60+hash(j,87)*300,y=171+hash(j,88)*60;
+        if(Math.sin(t*.002+j*2.3)>.12)r(x,y,2,2,p.glow);
       }
     }
   }
@@ -388,8 +421,8 @@
     if(state.location==='grove'){
       // Keep the creature in the actual woodland clearing, away from the stream,
       // bridge rail and decorative rock circle.
-      px=Math.max(145,Math.min(274,px));
-      py=Math.max(193,Math.min(235,py));
+      px=Math.max(153,Math.min(270,px));
+      py=Math.max(200,Math.min(233,py));
       if(px<180&&py>216)px=183;
     }else if(state.location==='meadow'){
       if(px<184)py=Math.max(py,211); // Outside the cottage
@@ -406,7 +439,7 @@
     if(!walking&&!motion.matches&&t-lastWander>17000){
       lastWander=t;
       const grove=state.location==='grove';
-      const nx=Math.max(grove?183:187,Math.min(grove?269:274,position.x+rand(-27,27)));
+      const nx=Math.max(grove?158:187,Math.min(grove?265:274,position.x+rand(-27,27)));
       const ny=Math.max(grove?196:211,Math.min(grove?232:237,position.y+rand(-13,13)));
       target={x:nx,y:ny};
     }
