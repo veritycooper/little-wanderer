@@ -36,14 +36,20 @@
           <span class="scene-nav-label">EXPLORE</span>
           <button type="button" class="scene-choice selected" data-scene="meadow" aria-pressed="true">Meadow</button>
           <button type="button" class="scene-choice" data-scene="grove" aria-pressed="false">Woodland</button>
-          <span class="scene-hint">Two little places to explore</span>
+          <span class="scene-hint">A little world to wander through</span>
         </div>
         <div class="world-frame">
           <div id="world" class="world">
             <canvas id="worldCanvas" width="400" height="250" role="img" aria-label="Pixel-art virtual world with a natural-coloured meadow, woodland, cosy cottage and a wandering magical companion."></canvas>
             <button id="cottage" class="cottage-hitbox" type="button" aria-label="Go into the cottage" title="Visit the cottage"><span class="sr-only">Go into the cottage</span></button>
+            <button id="mailboxInteract" type="button" class="world-object mailbox-hitbox" aria-label="Open Pip's mailbox" title="Check Pip's letters" hidden><span class="sr-only">Check the mailbox</span></button>
             <div id="room" hidden></div>
             <button id="outside" type="button" class="outside" hidden>← Outside</button>
+            <div class="room-controls" id="roomControls" hidden role="group" aria-label="Cottage rooms">
+              <button type="button" data-room="study" class="room-button" aria-pressed="true">✎ Study</button>
+              <button type="button" data-room="kitchen" class="room-button" aria-pressed="false">☕ Kitchen</button>
+            </div>
+            <button id="computerInteract" class="world-object computer-hitbox" type="button" title="Use Pip's computer" aria-label="Use the computer to research a new topic" hidden><span class="sr-only">Use computer</span></button>
             <button id="petInteract" type="button" class="pet-hitbox" aria-label="Play with Pip" title="Play with Pip"><span class="sr-only">Play with Pip</span></button>
             <span id="bubble" class="bubble" aria-live="polite"></span>
             <div class="world-hud"><span class="hud-dot"></span><span id="activity">Admiring the flowers</span></div>
@@ -51,7 +57,12 @@
           </div>
         </div>
         <div class="panel-foot"><span id="worldNote">Sunshine drifts over the meadow.</span><button id="visitButton" type="button" class="link-button">Visit the cottage <span aria-hidden="true">↗</span></button></div>
-        <div class="world-guide"><span><i class="guide-square"></i> Watch Pip explore</span><span><i class="guide-square guide-two"></i> Click the cottage to visit</span><span><i class="guide-square guide-three"></i> Two places, day and night</span></div>
+        <div class="roam-controls" id="roamControls" role="group" aria-label="Explore the world">
+          <button id="roamLeft" type="button" title="Wander to the left">← Wander left</button>
+          <span id="roamHint" aria-live="polite">Click the ground to guide Pip, or let Pip explore.</span>
+          <button id="roamRight" type="button" title="Wander to the right">Wander right →</button>
+        </div>
+        <div class="world-guide"><span><i class="guide-square"></i> Tap the ground to explore</span><span><i class="guide-square guide-two"></i> Click the mailbox for letters</span><span><i class="guide-square guide-three"></i> A cosy study, kitchen and woodland</span></div>
       </section>
       <aside class="panel needs" aria-labelledby="petTitle">
         <div class="pet-header"><div class="avatar" aria-hidden="true"><span class="mini-pet"><i></i><b></b><em></em></span></div><div><p class="eyebrow">YOUR LITTLE COMPANION</p><h2 id="petTitle">Pip <span>♡</span></h2><p id="mood">Feeling rather content</p></div><span class="tiny-heart" aria-hidden="true">✦</span></div>
