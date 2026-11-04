@@ -119,3 +119,50 @@ test("brain prompt uses actual state and local reply does not claim research", (
   activity(state,"feed");
   assert.equal(state.location,"cottage");
 });
+
+
+test("travel persists across reads and kitchen is a real room",async()=>{
+ const e=env();
+ const move=await worker.fetch(req("/api/travel","POST",{
+   location:"meadow",x:124,y:76,room:"study"
+ }),e);
+ assert.equal(move.status,200);
+ let world=await (await read(e)).json();
+ assert.equal(world.x,124);
+ assert.equal(world.lastOutdoor,"meadow");
+ assert.equal(world.location,"meadow");
+ const kitchen=await worker.fetch(req("/api/travel","POST",{
+   location:"cottage",x:124,y:76,room:"kitchen"
+ }),e);
+ assert.equal(kitchen.status,200);
+ world=await (await read(e)).json();
+ assert.equal(world.location,"cottage");
+ assert.equal(world.room,"kitchen");
+ assert.match(world.activity,/kitchen/i);
+ const denied=await worker.fetch(req("/api/travel","POST",{
+   location:"grove",x:250,y:76,room:"study"
+ }),e);
+ assert.equal(denied.status,400);
+});
+
+test("opening mail clears unread and next letter can raise mailbox again",async()=>{
+ const e=env();
+ const initial=await read(e);
+ assert.equal(initial.status,200);
+ let world=JSON.parse(e.DB.row.data);
+ world.unread=true;
+ e.DB.row.data=JSON.stringify(world);
+ const status=await worker.fetch(req("/api/read","POST",{}),e);
+ assert.equal(status.status,200);
+ world=await (await read(e)).json();
+ assert.equal(world.unread,false);
+});
+
+test("foraging and meals route to the right cottage room",()=>{
+ const world=freshWorld();
+ activity(world,"feed");
+ assert.equal(world.location,"cottage");
+ assert.equal(world.room,"kitchen");
+ activity(world,"read");
+ assert.equal(world.room,"study");
+});
