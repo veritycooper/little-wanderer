@@ -281,23 +281,32 @@
     }
   }
   function garden(p,t){
-    // A planted corner to the LEFT of the cottage: connected soil, fence,
-    // sprouting vegetables, flowers, a watering can and a tiny tool shed.
+    // Server-led plot: plants change size and develop blossoms/berries as
+    // Pip waters them. The garden really grows while this page is closed.
+    const beds=state.garden?.beds||[];
     r(3,197,92,34,p.grassShade);
     r(7,201,86,27,p.ground);
-    for(const [x,y,w] of [[11,204,23],[40,204,21],[67,204,22],
-      [12,216,23],[42,216,20],[69,216,21]]){
+    const plots=[[11,204,23],[40,204,21],[67,204,22],
+      [12,216,23],[42,216,20],[69,216,21]];
+    for(const [index,[x,y,w]] of plots.entries()){
+      const bed=beds[index%3];
+      const growth=Math.max(0,Math.min(100,Number(bed?.growth??28)));
+      const plantHeight=3+Math.round(growth/100*12);
+      const thirsty=bed?Number(bed.water)<30:false;
       r(x,y,w,8,p.trunk);
       r(x+3,y+2,w-6,4,p.roof);
       for(let dx=5;dx<w-2;dx+=9){
-        const bend=motion.matches?0:Math.sin(t*.002+x+dx)*1.2;
-        r(x+dx,y-6+bend,2,9,p.leafDark);
-        r(x+dx-4+bend,y-10,6,6,p.leaf2);
-        r(x+dx,y-12+bend,6,6,p.leaf3);
-        if((x+dx)%3===0)r(x+dx,y-13+bend,3,3,p.flower);
+        const bend=motion.matches?0:Math.sin(t*.002+x+dx)*(growth>40?1.3:.4);
+        r(x+dx,y-plantHeight+bend,2,plantHeight+2,p.leafDark);
+        r(x+dx-4+bend,y-plantHeight-2,6,5,thirsty?p.leaf:p.leaf2);
+        if(growth>=35)r(x+dx,y-plantHeight-4+bend,6,6,p.leaf3);
+        if(growth>=75){
+          const bloom=bed?.plant==='berry'?'#d46f82':
+            bed?.plant==='flower'?p.flower:p.flower2;
+          r(x+dx-1,y-plantHeight-6+bend,4,4,bloom);
+        }
       }
     }
-    // Low fence and a little garden sign; no pieces suspended in air.
     for(const x of [3,26,50,75,94]){
       r(x,190,4,39,p.trunk);r(x+1,187,2,7,p.woodLight);
     }
@@ -305,7 +314,6 @@
     r(5,231,91,3,p.grassShade);
     r(87,185,4,9,p.trunk);r(78,178,24,10,p.wood);
     r(80,180,20,6,p.woodLight);
-    // Small watering can, bucket and a neat crate.
     r(72,211,14,11,p.stone);r(74,208,11,3,p.waterLight);
     r(85,209,8,4,p.stoneLight);r(91,206,4,3,p.wood);
     r(8,234,26,8,p.wood);r(11,236,20,3,p.woodLight);
