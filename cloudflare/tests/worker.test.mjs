@@ -323,3 +323,33 @@ test("paired browsers share one state and session secrets are hidden",async()=>{
    {code:issued.code},false),e)).status,410);
  assert.equal((await read(e,"/api/state",false)).status,401);
 });
+
+
+test("live chat replies right away using shared conversational and project memory",async()=>{
+ const e=env();
+ const p=await worker.fetch(req("/api/chat","POST",{text:"Hello Pip, how is your garden?"}),e);
+ assert.equal(p.status,200);
+ assert.equal((await p.json()).mode,"workers-ai");
+ const world=await (await read(e)).json();
+ const last=world.messages.slice(-2);
+ assert.equal(last[0].from,"you");
+ assert.equal(last[0].via,"chat");
+ assert.equal(last[1].from,"pet");
+ assert.equal(last[1].via,"chat");
+ assert.ok(world.experiences.some(entry=>entry.kind==="conversation"));
+ assert.ok(brainContext(world,"What is your next project?").includes("RECENT REAL EXPERIENCES"));
+ assert.equal((await worker.fetch(req("/api/chat","POST",{text:"Again?"}),e)).status,429);
+});
+
+test("live chat observes the application AI budget and marks fallback honestly",async()=>{
+ const e=env();
+ await read(e);
+ const state=JSON.parse(e.DB.row.data);
+ state.dailyAI={day:new Date().toISOString().slice(0,10),count:24};
+ e.DB.row.data=JSON.stringify(state);
+ const res=await worker.fetch(req("/api/chat","POST",{text:"Can we talk?"}),e);
+ assert.equal(res.status,200);
+ assert.equal((await res.json()).mode,"fallback");
+ const world=await (await read(e)).json();
+ assert.equal(world.lastReplyMode,"fallback");
+});
