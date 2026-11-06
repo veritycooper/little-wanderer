@@ -59,6 +59,61 @@ function renderDiscoveries(){
  }
 }
 function renderInterests(){$('interests').replaceChildren();Object.entries(state.interests||{}).sort((a,b)=>b[1]-a[1]).slice(0,6).forEach(([name])=>{const chip=document.createElement('span');chip.className='chip';chip.textContent='✿ '+name;$('interests').append(chip)})}
+function renderLife(){
+ const garden=$('gardenProgress'),projects=$('projectProgress');
+ garden.replaceChildren();projects.replaceChildren();
+ const beds=state.garden?.beds||[];
+ if(!beds.length){
+   const p=document.createElement('p');p.className='tiny';
+   p.textContent='Pip’s garden grows when her cloud brain is connected.';
+   garden.append(p);
+ }else{
+   const heading=document.createElement('p');heading.className='life-subheading';
+   heading.textContent='GARDEN BEDS';garden.append(heading);
+   for(const bed of beds){
+     const row=document.createElement('div');row.className='life-row';
+     const name=document.createElement('span');
+     const progress=Math.max(0,Math.min(100,Number(bed.growth)||0));
+     name.textContent=(bed.plant==='flower'?'✿ ':bed.plant==='berry'?'❀ ':'♧ ')+bed.name;
+     const status=document.createElement('span');
+     status.textContent=Math.round(progress)+'% grown · '+(bed.water<35?'needs water':'watered');
+     const wrap=document.createElement('div');wrap.className='life-bar';
+     const fill=document.createElement('div');fill.style.width=progress+'%';
+     wrap.append(fill);
+     const labels=document.createElement('div');labels.className='life-row-labels';
+     labels.append(name,status);row.append(labels,wrap);garden.append(row);
+   }
+   const harvests=document.createElement('p');harvests.className='tiny';
+   harvests.textContent='Berry harvests: '+(state.garden.harvests||0);
+   garden.append(harvests);
+ }
+ const heading=document.createElement('p');heading.className='life-subheading';
+ heading.textContent='MY LITTLE PROJECTS';projects.append(heading);
+ const current=(state.projects||[]).find(p=>!p.done);
+ if(current){
+   const name=document.createElement('strong');name.textContent=current.title;
+   const next=document.createElement('p');next.className='tiny';
+   next.textContent=current.steps?.[current.step]||'Almost finished!';
+   const bar=document.createElement('div');bar.className='life-bar';
+   const fill=document.createElement('div');fill.style.width=Math.max(0,Math.min(100,current.progress||0))+'%';bar.append(fill);
+   projects.append(name,next,bar);
+ }else{
+   const p=document.createElement('p');p.className='tiny';
+   p.textContent='Pip is deciding what she’d like to make next.';
+   projects.append(p);
+ }
+ const completed=(state.projects||[]).filter(p=>p.done).slice(0,3);
+ for(const p of completed){
+   const item=document.createElement('p');item.className='tiny life-completed';
+   item.textContent='✓ '+p.title;projects.append(item);
+ }
+ const experiences=(state.experiences||[]).slice(0,2);
+ if(experiences.length){
+   const line=document.createElement('p');line.className='tiny life-experience';
+   line.textContent='Recently: '+experiences.map(e=>e.text).join(' ');
+   projects.append(line);
+ }
+}
 function renderSkills(){$('skills').replaceChildren();for(const [name,val] of Object.entries(state.skills)){const r=document.createElement('div');r.className='skill';const label=document.createElement('span');label.textContent=name[0].toUpperCase()+name.slice(1);const bar=document.createElement('div');bar.className='bar';const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=val+'%';bar.append(fill);const n=document.createElement('b');n.textContent=val+' xp';r.append(label,bar,n);$('skills').append(r)}}
 function renderWorld(){
  const isHome=state.location==='cottage';
@@ -90,7 +145,7 @@ function renderWorld(){
 }
 function renderMemories(){const host=$('memoryNotes');host.replaceChildren();for(const [i,item] of (state.memories||[]).entries()){const row=document.createElement('div');row.className='memory-row';const t=document.createElement('span');t.textContent=typeof item==='string'?item:item.text||'';const b=document.createElement('button');b.type='button';b.textContent='×';b.title='Forget this';b.setAttribute('aria-label','Forget memory');b.addEventListener('click',async()=>{if(config.url&&config.token){try{const response=await api('/api/memories/'+i,{method:'DELETE'});if(!response.ok)throw Error();await sync();return}catch{return toast('Unable to forget while brain server is connected.')}}state.memories.splice(i,1);save();renderMemories()});row.append(t,b);host.append(row)}if(!state.memories?.length){const p=document.createElement('p');p.className='tiny';p.textContent='A fresh shelf, ready for little things worth remembering.';host.append(p)}}
 function renderDecisions(){const el=$('decisions');el.replaceChildren();for(const d of (state.decisions||[]).slice(0,45)){const row=document.createElement('article');row.className='journal-entry';const time=document.createElement('time');time.textContent=date(d.at);const h=document.createElement('h4');h.textContent=d.action;const p=document.createElement('p');p.textContent=d.reason;row.append(time,h,p);el.append(row)}if(!state.decisions?.length)el.textContent='My first decisions will appear here soon.';const plan=state.plan||{action:'explore',reason:'I feel curious.'};$('nextPlan').textContent=plan.action;$('planReason').textContent=plan.reason}
-function render(){renderResearchPermission();updateStats();renderMemories();renderDecisions();renderWorld();renderInterests();renderSkills();renderMessages();renderJournal();renderDiscoveries();$('petName').value=state.name;$('typing').textContent=state.pending.length?state.name+' has a letter to think about...':'✿ '+state.name+' is enjoying a quiet moment.';$('unread').hidden=!state.unread}
+function render(){renderResearchPermission();renderLife();updateStats();renderMemories();renderDecisions();renderWorld();renderInterests();renderSkills();renderMessages();renderJournal();renderDiscoveries();$('petName').value=state.name;$('typing').textContent=state.pending.length?state.name+' has a letter to think about...':'✿ '+state.name+' is enjoying a quiet moment.';$('unread').hidden=!state.unread}
 const move=()=>{const oldX=Number(state.x)||57,oldY=Number(state.y)||64;state.x=Math.max(10,Math.min(79,oldX+(Math.random()-.5)*30));state.y=Math.max(53,Math.min(76,oldY+(Math.random()-.5)*17))};
 function act(force){const s=state.stats;let action=force||'wander';if(!force){if(s.energy<24)action='rest';else if(s.hunger<25)action='feed';else if(s.social<30)action='reflect';else if(s.curiosity<35)action='read';else action=rand(['wander','wander','garden','explore','reflect','read','rest']);}
 const notes={wander:['Walking through the meadow','The air smells like wildflowers','A little stroll clears my head'],garden:['Checking the little seedlings','I think the garden looks happier today'],explore:['Investigating something shiny','I saw a curious little bug'],reflect:['Thinking about my day','I wonder what you are doing'],read:['Reading under a tree','Learning something new'],rest:['A well-earned little nap','Resting in my cottage'],feed:['Having something tasty','A snack sounds lovely'],play:['Chasing a fluttering leaf','Playing in the grass']};
