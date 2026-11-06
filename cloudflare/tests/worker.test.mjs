@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker, { freshWorld, safeWorld, brainContext, fallback, activity } from "../src/index.js";
+import worker, { freshWorld, safeWorld, brainContext, fallback, activity, growGarden, tendGarden, workOnProject } from "../src/index.js";
 
 class FakeD1 {
   row = null;
@@ -257,4 +257,69 @@ test("rest, reading and meals have three distinct cottage rooms",()=>{
  activity(world,"rest");assert.equal(world.room,"living");
  activity(world,"read");assert.equal(world.room,"study");
  activity(world,"feed");assert.equal(world.room,"kitchen");
+});
+
+
+test("real garden grows between server ticks, loses water and can be tended",()=>{
+ const p=freshWorld();
+ const first=p.garden.beds[0];
+ const before=first.growth,water=first.water;
+ growGarden(p,p.garden.lastGrowthAt+4*3600000);
+ assert.ok(first.growth>before);
+ assert.ok(first.water<water);
+ first.water=10;
+ tendGarden(p);
+ assert.ok(first.water>10);
+ assert.equal(p.location,"meadow");
+ assert.ok(p.experiences.some(e=>e.kind==="gardening"));
+ assert.ok(p.skills.gardening>1);
+});
+
+test("Pip chooses a hobby project and progresses through real milestones",()=>{
+ const world=freshWorld();
+ world.nextProjectAt=0;
+ const history=world.experiences.length;
+ const initial=workOnProject(world);
+ assert.ok(initial);
+ assert.equal(world.projects.length,1);
+ assert.equal(world.projects[0].progress,25);
+ assert.ok(world.experiences.length>history);
+ for(let i=0;i<3;i++)workOnProject(world);
+ assert.equal(world.projects[0].progress,100);
+ assert.equal(world.projects[0].done,true);
+ assert.ok(world.journal.some(x=>x.title.includes("finished")));
+ assert.ok(brainContext(world,"How's your project?").includes(world.projects[0].title));
+ assert.ok(brainContext(world,"How is your garden?").includes("REAL GARDEN"));
+});
+
+test("paired browsers share one state and session secrets are hidden",async()=>{
+ const e=env();
+ const started=await worker.fetch(req("/api/device/pair/start","POST",{}),e);
+ assert.equal(started.status,200);
+ const issued=await started.json();
+ assert.match(issued.code,/^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/);
+ assert.equal((await worker.fetch(req("/api/device/pair/claim","POST",
+   {code:"ABCDEFGHJK"},false),e)).status,401);
+ const completed=await worker.fetch(req("/api/device/pair/claim","POST",
+   {code:issued.code},false),e);
+ assert.equal(completed.status,200);
+ const token=(await completed.json()).token;
+ assert.match(token,/^[0-9a-f]{64}$/);
+ const pairedRequest=async(path,method="GET",body)=>worker.fetch(new Request(
+   "https://little-wanderer-brain.example"+path,{
+     method,
+     headers:{Origin:"https://veritycooper.github.io",Authorization:"Bearer "+token,
+       ...(body?{"Content-Type":"application/json"}:{})},
+     ...(body?{body:JSON.stringify(body)}:{})
+   }),e);
+ const stateRes=await pairedRequest("/api/state");
+ assert.equal(stateRes.status,200);
+ const state=await stateRes.json();
+ assert.equal(state.deviceSessions,undefined);
+ assert.equal(state.pairing,undefined);
+ assert.equal((await pairedRequest("/api/name","POST",{name:"Piplin"})).status,200);
+ assert.equal((await(await read(e)).json()).name,"Piplin");
+ assert.equal((await worker.fetch(req("/api/device/pair/claim","POST",
+   {code:issued.code},false),e)).status,410);
+ assert.equal((await read(e,"/api/state",false)).status,401);
 });
