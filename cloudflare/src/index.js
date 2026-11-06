@@ -216,6 +216,7 @@ export function freshWorld() {
     discoveries: [], decisions: [], memories: [], pending: [], pendingResearch: null,
     garden: createGarden(t), projects: [], experiences: [], preferences: {garden:3,craft:2,explore:3,read:2},
     nextProjectAt: t + 5 * 60_000,
+    deviceSessions: [], pairing: null,
     unread: false, nextAction: t + 80_000, nextResearch: t + 8 * 3600_000,
     plan: { action: "Explore the meadow", reason: "I'm curious about my new home." },
     dailyAI: { day: "", count: 0 }, lastReplyMode: "none",
@@ -231,6 +232,8 @@ export function safeWorld(world) {
   delete copy.lastMessageAt;
   delete copy.lastManualResearch;
   delete copy.lastForageAt;
+  delete copy.deviceSessions;
+  delete copy.pairing;
   return copy;
 }
 
@@ -253,15 +256,36 @@ function json(data, status = 200, headers = {}) {
   });
 }
 function fail(status, detail, headers) { return json({ detail }, status, headers); }
-function authorized(request, env) {
-  const secret = env.PET_API_TOKEN;
-  if (!secret || secret.length < 32) return false;
-  const received = request.headers.get("Authorization") || "";
-  const expected = "Bearer " + secret;
-  let diff = received.length ^ expected.length;
-  const n = Math.max(received.length, expected.length);
-  for (let i = 0; i < n; i++) diff |= (received.charCodeAt(i) || 0) ^ (expected.charCodeAt(i) || 0);
-  return diff === 0;
+function authorizedMaster(request, env) {
+  const secret=env.PET_API_TOKEN;
+  if(!secret||secret.length<32)return false;
+  const received=request.headers.get("Authorization")||"";
+  const expected="Bearer "+secret;
+  let diff=received.length^expected.length;
+  const n=Math.max(received.length,expected.length);
+  for(let i=0;i<n;i++)diff|=(received.charCodeAt(i)||0)^(expected.charCodeAt(i)||0);
+  return diff===0;
+}
+async function sha256(value){
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,"0")).join("");
+}
+function newSecret(){
+  const b=new Uint8Array(32);crypto.getRandomValues(b);
+  return Array.from(b,n=>n.toString(16).padStart(2,"0")).join("");
+}
+function pairingCode(){
+  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes=new Uint8Array(10);crypto.getRandomValues(bytes);
+  return Array.from(bytes,n=>chars[n%chars.length]).join("");
+}
+async function authorized(request,env){
+  if(authorizedMaster(request,env))return true;
+  const auth=request.headers.get("Authorization")||"";
+  if(!/^Bearer [a-f0-9]{64}$/.test(auth))return false;
+  const hash=await sha256(auth.slice(7));
+  const {state}=await load(env);
+  return (state.deviceSessions||[]).some(s=>s.hash===hash&&s.expires>time());
 }
 async function bodyOf(request, limit = 16000) {
   if (!(request.headers.get("Content-Type") || "").toLowerCase().includes("application/json")) throw Error("Send JSON");
@@ -577,7 +601,46 @@ async function handle(request, env) {
   }
   if (!path.startsWith("/api/")) return fail(404, "Unknown endpoint", headers);
   if (!env.PET_API_TOKEN || env.PET_API_TOKEN.length < 32) return fail(503, "Set a secure PET_API_TOKEN", headers);
-  if (!authorized(request, env)) return fail(401, "Invalid access token", headers);
+  if(path==="/api/device/pair/claim"&&method==="POST"){
+    // Pairing is unauthenticated by design, but requires a temporary, random
+    // one-use code from an already authenticated browser.
+    const origin=request.headers.get("Origin");
+    if(origin&&origin!==corsOrigin(env)&&
+      origin!=="http://localhost:8000"&&origin!=="http://127.0.0.1:8000")
+      return fail(403,"Not an approved website origin",headers);
+    const body=await bodyOf(request);
+    const code=clean(body.code,20).replace(/[\s-]/g,"").toUpperCase();
+    if(!/^[A-HJ-NP-Z2-9]{10}$/.test(code))return fail(400,"Enter the ten-letter pairing code",headers);
+    const hash=await sha256(code);
+    const sessionToken=newSecret();
+    const sessionHash=await sha256(sessionToken);
+    const result=await change(env,world=>{
+      const pairing=world.pairing;
+      if(!pairing||pairing.expires<time()||pairing.attempts>=5)
+        return "expired";
+      if(pairing.hash!==hash){
+        pairing.attempts=(pairing.attempts||0)+1;
+        return "incorrect";
+      }
+      world.pairing=null; // One code grants exactly one device session.
+      world.deviceSessions=(world.deviceSessions||[])
+        .filter(s=>s.expires>time()).slice(-5);
+      world.deviceSessions.push({hash:sessionHash,expires:time()+180*86400000});
+      return "ok";
+    });
+    return result.result==="ok"?json({token:sessionToken,expiresInDays:180},200,headers):
+      fail(result.result==="expired"?410:401,
+        result.result==="expired"?"Code expired or already used":"Pairing code not recognised",headers);
+  }
+  if(!await authorized(request,env))return fail(401,"Invalid access token",headers);
+  if(path==="/api/device/pair/start"&&method==="POST"){
+    const code=pairingCode(),hash=await sha256(code);
+    await change(env,world=>{
+      world.pairing={hash,expires:time()+10*60000,attempts:0};
+    });
+    return json({code:code.slice(0,5)+"-"+code.slice(5),expiresInMinutes:10},200,headers);
+  }
+
   try {
     if (path === "/api/state" && method === "GET") {
       return json(safeWorld((await load(env)).state), 200, headers);
