@@ -91,10 +91,14 @@
           <button type="button" class="tab" data-tab="activity" role="tab" aria-selected="false">My day</button>
         </div>
         <div id="chatView" class="view" role="tabpanel">
-          <div class="view-title"><div><p class="eyebrow">A LITTLE CORRESPONDENCE</p><h3>Letters between us</h3><p>No instant replies here. Pip writes back when there's a quiet moment.</p></div><span class="view-emblem" aria-hidden="true">✉</span></div>
+          <div class="view-title"><div><p class="eyebrow">A LITTLE CORRESPONDENCE</p><h3 id="chatHeadline">Letters between us</h3><p id="chatIntro">No instant replies here. Pip writes back when there's a quiet moment.</p></div><span class="view-emblem" aria-hidden="true">✉</span></div>
+          <div class="conversation-mode" role="group" aria-label="How to talk with Pip">
+            <button type="button" data-conversation="letter" aria-pressed="true">✉ Slow letters</button>
+            <button type="button" data-conversation="chat" aria-pressed="false">✦ Live chat</button>
+          </div>
           <div id="messages" class="messages" aria-live="polite"></div>
           <div id="typing" class="typing">Pip is enjoying a quiet moment.</div>
-          <form id="chatForm" class="chat-form"><label for="message" class="sr-only">Write Pip a message</label><input id="message" maxlength="500" required autocomplete="off" placeholder="Write a little letter..."><button type="submit">Send <span aria-hidden="true">↗</span></button></form>
+          <form id="chatForm" class="chat-form"><label for="message" class="sr-only">Write Pip a message</label><input id="message" maxlength="500" required autocomplete="off" placeholder="Write a little letter..."><button id="sendMessageButton" type="submit">Send <span aria-hidden="true">↗</span></button></form>
         </div>
         <div id="journalView" class="view" role="tabpanel" hidden><div class="view-title"><div><p class="eyebrow">FROM THE LITTLE NOTEBOOK</p><h3>Pages from my journal</h3><p>Small moments worth keeping, written down as they happen.</p></div><span class="view-emblem" aria-hidden="true">▣</span></div><div id="journal"></div></div>
         <div id="discoveriesView" class="view" role="tabpanel" hidden><div class="view-title"><div><p class="eyebrow">THINGS TO WONDER ABOUT</p><h3>Things I've discovered</h3><p>Real articles and sources that we can explore together.</p></div><span class="view-emblem" aria-hidden="true">✦</span></div><div id="discoveries"></div></div>
