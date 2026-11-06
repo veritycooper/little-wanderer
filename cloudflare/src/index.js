@@ -645,6 +645,30 @@ async function handle(request, env) {
     if (path === "/api/state" && method === "GET") {
       return json(safeWorld((await load(env)).state), 200, headers);
     }
+    if (path === "/api/chat" && method === "POST") {
+      const input=await bodyOf(request);
+      const message=validateString(input.text,500);
+      if(!message)return fail(400,"Message must contain 1–500 characters",headers);
+      const began=await change(env,world=>{
+        if(time()-(world.lastChatAt||0)<7000)return {error:"Please give Pip a moment between messages"};
+        world.lastChatAt=time();
+        world.messages.push({id:uid(),from:"you",via:"chat",text:message,at:time()});
+        world.messages=cap(world.messages,100);
+        world.stats.social=clamp(world.stats.social+5);
+        const allowance=budget(world,env);
+        return {allowance};
+      });
+      if(began.result.error)return fail(429,began.result.error,headers);
+      const reply=await aiReply(env,began.state,message,began.result.allowance);
+      await change(env,world=>{
+        world.messages.push({id:uid(),from:"pet",via:"chat",text:reply.text,at:time()});
+        world.messages=cap(world.messages,100);
+        world.lastReplyMode=reply.mode;
+        world.stats.social=clamp(world.stats.social+5);
+        experience(world,"conversation","I had a chat with my friend about: "+clean(message,95));
+      });
+      return json({ok:true,mode:reply.mode},200,headers);
+    }
     if (path === "/api/message" && method === "POST") {
       const input = await bodyOf(request);
       const value = validateString(input.text, 500);
