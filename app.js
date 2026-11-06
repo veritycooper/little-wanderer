@@ -2,6 +2,25 @@
 'use strict';
 const $=id=>document.getElementById(id), clamp=n=>Math.max(0,Math.min(100,Math.round(n))), now=()=>Date.now(), rand=a=>a[Math.floor(Math.random()*a.length)];
 const DEFAULT_BRAIN_URL='https://little-wanderer-brain.verity-cooper24.workers.dev';
+const CONVERSATION_KEY='little-wanderer-conversation-mode';
+let conversationMode=localStorage.getItem(CONVERSATION_KEY)==='chat'?'chat':'letter';
+let chatBusy=false;
+function setConversationMode(mode){
+ conversationMode=mode==='chat'?'chat':'letter';
+ localStorage.setItem(CONVERSATION_KEY,conversationMode);
+ document.querySelectorAll('[data-conversation]').forEach(b=>{
+   const active=b.dataset.conversation===conversationMode;
+   b.classList.toggle('selected',active);
+   b.setAttribute('aria-pressed',String(active));
+ });
+ $('chatHeadline').textContent=conversationMode==='chat'?'Talk to Pip':'Letters between us';
+ $('chatIntro').textContent=conversationMode==='chat'
+   ?'Talk whenever you like. Pip remembers the same life, garden, hobbies and letters.'
+   :"No instant replies here. Pip writes back when there's a quiet moment.";
+ $('message').placeholder=conversationMode==='chat'?'Say something to Pip...':'Write a little letter...';
+ $('sendMessageButton').textContent=conversationMode==='chat'?'Chat ↗':'Send ↗';
+}
+
 const DATA_KEY='little-wanderer-v1',CONFIG_KEY='little-wanderer-config',THEME_KEY='little-wanderer-theme-v2',BACKUP_KEY='little-wanderer-before-cloud-brain-v1',IMPORTED_KEY='little-wanderer-cloud-brain-imported';
 const topics=['wildflowers','the moon','butterflies','forests','mushrooms','stars','birds','oceans','bees','clouds','foxes','seashells'];
 const statMeta=[['hunger','▤','Full tummy'],['energy','☾','Energy'],['social','✉','Social'],['joy','✧','Happiness'],['curiosity','✦','Curiosity']];
@@ -146,7 +165,10 @@ function renderWorld(){
 }
 function renderMemories(){const host=$('memoryNotes');host.replaceChildren();for(const [i,item] of (state.memories||[]).entries()){const row=document.createElement('div');row.className='memory-row';const t=document.createElement('span');t.textContent=typeof item==='string'?item:item.text||'';const b=document.createElement('button');b.type='button';b.textContent='×';b.title='Forget this';b.setAttribute('aria-label','Forget memory');b.addEventListener('click',async()=>{if(config.url&&config.token){try{const response=await api('/api/memories/'+i,{method:'DELETE'});if(!response.ok)throw Error();await sync();return}catch{return toast('Unable to forget while brain server is connected.')}}state.memories.splice(i,1);save();renderMemories()});row.append(t,b);host.append(row)}if(!state.memories?.length){const p=document.createElement('p');p.className='tiny';p.textContent='A fresh shelf, ready for little things worth remembering.';host.append(p)}}
 function renderDecisions(){const el=$('decisions');el.replaceChildren();for(const d of (state.decisions||[]).slice(0,45)){const row=document.createElement('article');row.className='journal-entry';const time=document.createElement('time');time.textContent=date(d.at);const h=document.createElement('h4');h.textContent=d.action;const p=document.createElement('p');p.textContent=d.reason;row.append(time,h,p);el.append(row)}if(!state.decisions?.length)el.textContent='My first decisions will appear here soon.';const plan=state.plan||{action:'explore',reason:'I feel curious.'};$('nextPlan').textContent=plan.action;$('planReason').textContent=plan.reason}
-function render(){renderResearchPermission();renderLife();updateStats();renderMemories();renderDecisions();renderWorld();renderInterests();renderSkills();renderMessages();renderJournal();renderDiscoveries();$('petName').value=state.name;$('typing').textContent=state.pending.length?state.name+' has a letter to think about...':'✿ '+state.name+' is enjoying a quiet moment.';$('unread').hidden=!state.unread}
+function render(){renderResearchPermission();renderLife();updateStats();renderMemories();renderDecisions();renderWorld();renderInterests();renderSkills();renderMessages();renderJournal();renderDiscoveries();$('petName').value=state.name;$('typing').textContent=conversationMode==='chat'
+  ?(chatBusy?state.name+' is replying...':state.lastReplyMode==='fallback'
+    ?'✧ Live chat is using a simpler fallback reply right now.':'✧ Pip is ready to talk.')
+  :(state.pending.length?state.name+' has a letter to think about...':'✿ '+state.name+' is enjoying a quiet moment.');$('unread').hidden=!state.unread}
 const move=()=>{const oldX=Number(state.x)||57,oldY=Number(state.y)||64;state.x=Math.max(10,Math.min(79,oldX+(Math.random()-.5)*30));state.y=Math.max(53,Math.min(76,oldY+(Math.random()-.5)*17))};
 function act(force){const s=state.stats;let action=force||'wander';if(!force){if(s.energy<24)action='rest';else if(s.hunger<25)action='feed';else if(s.social<30)action='reflect';else if(s.curiosity<35)action='read';else action=rand(['wander','wander','garden','explore','reflect','read','rest']);}
 const notes={wander:['Walking through the meadow','The air smells like wildflowers','A little stroll clears my head'],garden:['Checking the little seedlings','I think the garden looks happier today'],explore:['Investigating something shiny','I saw a curious little bug'],reflect:['Thinking about my day','I wonder what you are doing'],read:['Reading under a tree','Learning something new'],rest:['A well-earned little nap','Resting in my cottage'],feed:['Having something tasty','A snack sounds lovely'],play:['Chasing a fluttering leaf','Playing in the grass']};
@@ -328,7 +350,7 @@ async function decideResearch(approve){
    busy=false;$('approveResearch').disabled=false;$('declineResearch').disabled=false;
  }
 }
-const api=(route,options={})=>fetch(config.url.replace(/\/$/,'')+route,{...options,headers:{'Content-Type':'application/json','Authorization':'Bearer '+config.token,...options.headers},signal:AbortSignal.timeout(12000)});
+const api=(route,options={})=>fetch(config.url.replace(/\/$/,'')+route,{...options,headers:{'Content-Type':'application/json','Authorization':'Bearer '+config.token,...options.headers},signal:options.signal||AbortSignal.timeout(route==='/api/chat'?35000:12000)});
 async function connect(){
  const url=$('backendUrl').value.trim().replace(/\/$/,'');
  const token=$('backendToken').value.trim();
@@ -412,7 +434,40 @@ function switchTab(which){
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 $('memoryForm').addEventListener('submit',async e=>{e.preventDefault();const input=$('memoryInput');const memory=input.value.trim();if(!memory)return;if(config.url&&config.token){try{const response=await api('/api/memories',{method:'POST',body:JSON.stringify({text:memory})});if(!response.ok)throw Error();input.value='';await sync();return}catch{return toast('Unable to save memory to brain server.')}}state.memories=state.memories||[];if(state.memories.length>=30)return toast('The memory shelf is full.');if(!state.memories.includes(memory))state.memories.push(memory);input.value='';save();renderMemories()});
 document.querySelectorAll('[data-care]').forEach(b=>b.addEventListener('click',async()=>{const action=b.dataset.care;if(action==='talk'){switchTab('chat');$('message').focus();return}if(config.url&&config.token){try{const r=await api('/api/care',{method:'POST',body:JSON.stringify({action})});if(r.ok){await sync();return}}catch{}}act(action==='rest'?'rest':action==='feed'?'feed':'play');say(action==='feed'?'Yum, thank you!':action==='rest'?'Time for a nap!':'Hehe!');save();render()}));
-$('chatForm').addEventListener('submit',async e=>{e.preventDefault();if(config.url&&config.token){const value=$('message').value.trim();if(!value)return;try{const r=await api('/api/message',{method:'POST',body:JSON.stringify({text:value})});if(!r.ok)throw Error();$('message').value='';window.PixelWorld?.letterSent();await sync();return}catch{return toast('The brain is offline. Reconnect or switch to browser mode.')}}sendMessage()});
+$('chatForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const value=$('message').value.trim();
+ if(!value||chatBusy)return;
+ if(conversationMode==='chat'){
+   if(!config.url||!config.token)return toast('Connect your cloud brain to use live chat.');
+   chatBusy=true;$('sendMessageButton').disabled=true;render();
+   try{
+     const r=await api('/api/chat',{method:'POST',body:JSON.stringify({text:value})});
+     const payload=await r.json().catch(()=>({}));
+     if(!r.ok){
+       if(r.status===404)throw Error('Live chat is still deploying to Cloudflare.');
+       if(r.status===429)throw Error('Pip needs a little moment between messages.');
+       throw Error(payload.detail||'Pip could not answer right now.');
+     }
+     $('message').value='';
+     await sync();
+     if(payload.mode==='fallback')toast('Pip replied using her simpler fallback; the AI limit may have been reached.');
+   }catch(err){toast(err?.message||'Unable to chat. Please try again.')}
+   finally{chatBusy=false;$('sendMessageButton').disabled=false;render();}
+   return;
+ }
+ if(config.url&&config.token){
+   try{
+     const r=await api('/api/message',{method:'POST',body:JSON.stringify({text:value})});
+     if(!r.ok)throw Error();
+     $('message').value='';window.PixelWorld?.letterSent();await sync();return;
+   }catch{return toast('The brain is offline. Reconnect or switch to browser mode.')}
+ }
+ sendMessage();
+});
+document.querySelectorAll('[data-conversation]').forEach(b=>
+ b.addEventListener('click',()=>{setConversationMode(b.dataset.conversation);render();}));
+setConversationMode(conversationMode);
 $('research').addEventListener('click',proposeResearch);
 $('approveResearch').addEventListener('click',()=>decideResearch(true));
 $('declineResearch').addEventListener('click',()=>decideResearch(false));
