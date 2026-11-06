@@ -100,10 +100,10 @@ export function growGarden(world,now=time()){
  if(elapsed<.0001)return;
  world.garden.lastGrowthAt=now;
  for(const bed of world.garden.beds){
-   bed.water=Math.max(0,Math.round((Number(bed.water)||0)-elapsed*5));
+   bed.water=Math.max(0,Math.round(((Number(bed.water)||0)-elapsed*5)*100)/100);
    if(bed.water>12&&bed.growth<100){
      const speed=bed.plant==="flower"?12:bed.plant==="herb"?10:7;
-     bed.growth=Math.min(100,Math.round((Number(bed.growth)||0)+elapsed*speed*(bed.water<30?.55:1)));
+     bed.growth=Math.min(100,Math.round(((Number(bed.growth)||0)+elapsed*speed*(bed.water<30?.55:1))*100)/100);
    }
  }
 }
@@ -193,12 +193,12 @@ function chooseActivity(world){
  if(needsWater&&s.energy>36)return "garden";
  const choices=[
    ["garden",8+(world.preferences.garden||2)*3],
-   ["hobby",8+(world.preferences.craft||2)*2+(world.projects.some(p=>!p.done)?16:0)],
+   ["hobby",world.projects.some(p=>!p.done)||time()>=world.nextProjectAt?8+(world.preferences.craft||2)*2+(world.projects.some(p=>!p.done)?16:0):0],
    ["explore",12+(world.preferences.explore||2)*3],
    ["read",9+(world.preferences.read||2)*2],
    ["wander",12],["reflect",8],["rest",s.energy<50?14:5]
  ];
- const pool=choices.flatMap(([name,weight])=>Array(Math.max(1,Math.round(weight))).fill(name));
+ const pool=choices.flatMap(([name,weight])=>Array(Math.max(0,Math.round(weight))).fill(name));
  return sample(pool);
 }
 
