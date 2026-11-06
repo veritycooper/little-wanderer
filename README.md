@@ -145,3 +145,47 @@ Existing saved letters, interests, journal and memories keep the original `littl
 ## Permission-first research
 
 Pip independently develops specific questions around interests such as mushrooms, wildflowers, stars and butterflies, but **never searches without your approval**. Open Little curiosities to approve or decline each pending question, or click the study computer to ask Pip what is on her mind. Approved source research writes a short question-centred note and Pip's own observation, not an encyclopedia dump. Existing D1 memories and journals are preserved.
+
+
+## Pip's ongoing life — garden, projects and conversations
+
+Pip has one **persistent cloud world**. While the browser is closed, her
+Cloudflare scheduled job continues updating needs and garden growth, choosing
+activities from weighted needs and learned preferences, working on projects
+and writing down real milestones. No model is trained on the fly; the
+simulation provides reliable state, and Workers AI uses it for conversation.
+
+- **Real garden**: wildflowers, kitchen herbs and strawberries have saved water
+  levels and growth values. Pip chooses to tend plants when they are thirsty.
+  Strawberry harvests and gardening experiences are recorded.
+- **Personal projects**: Pip independently chooses from hobbies like a
+  botanical collection, bird journal, recipe book, star sketches and forest
+  mapping, and works through persistent steps toward completion.
+- **Honest conversation**: Slow letters remain. A separate **Live chat** mode
+  responds without waiting for the next cron, uses the *same* cloud memories,
+  garden, journal, interests and project details, and indicates when AI falls
+  back because it is unavailable or its daily allowance is used.
+- **Research permission**: Interests may generate questions but never fetch
+  external research until you approve the particular question.
+
+### One Pip on several devices
+
+Once your main browser is connected to the Cloudflare Worker, open
+**Settings & your saved world → Make a pairing code**. The code lasts
+**10 minutes**, works only once and has limited guesses. Open the **same
+GitHub Pages website** in a different browser or device, go to Settings,
+enter the code in **Pair device**, and that browser receives its own
+180-day access token to the *same* existing Pip.
+
+Neither the master PET_API_TOKEN nor your private state is published in
+the site code. Device session tokens are hashed in D1, and session secrets
+are excluded from the public world-state API. The receiving browser stores
+its own session locally. This is device pairing, **not yet automatic
+cross-device sign-in**: you must pair each additional browser once.
+Do not share codes or device tokens, and avoid using untrusted browsers.
+
+The existing original browser will still automatically reconnect from its
+saved settings. The Cloudflare Worker must finish its GitHub deployment for
+new API routes such as /api/chat and /api/device/pair/start to work.
+Cloudflare free-tier AI usage limits and the app's configured daily budget
+still apply.
