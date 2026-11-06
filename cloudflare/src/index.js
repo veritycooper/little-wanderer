@@ -548,6 +548,40 @@ function safeImport(data) {
       question: clean(e.question, 160),thought:clean(e.thought,180),
       url: e.url.slice(0, 350),
       at: Number(e.at) || time() })), 70);
+  // Preserve garden and projects from a genuine user export, but validate the
+  // full shape. No imported credential, pending background job or AI counter.
+  if(data.garden&&Array.isArray(data.garden.beds)){
+    const valid=new Map(data.garden.beds.map(b=>[b?.id,b]));
+    out.garden.beds=out.garden.beds.map(b=>{
+      const incoming=valid.get(b.id);
+      if(!incoming)return b;
+      return {...b,
+        growth:Math.max(0,Math.min(100,Number(incoming.growth)||0)),
+        water:Math.max(0,Math.min(100,Number(incoming.water)||0)),
+        lastTendedAt:Number(incoming.lastTendedAt)||time()};
+    });
+    out.garden.harvests=Math.max(0,Math.min(10000,Number(data.garden.harvests)||0));
+    out.garden.lastGrowthAt=time();
+  }
+  out.projects=cap((Array.isArray(data.projects)?data.projects:[]).map(p=>{
+    const template=PROJECT_TEMPLATES.find(t=>t.id===p?.template);
+    if(!template)return null;
+    const step=Math.max(0,Math.min(template.steps.length,Math.floor(Number(p.step)||0)));
+    return {id:uid(),template:template.id,title:template.title,
+      interest:template.interest,kind:template.kind,steps:template.steps,
+      step,progress:Math.round(step/template.steps.length*100),
+      startedAt:Number(p.startedAt)||time(),
+      updatedAt:Number(p.updatedAt)||time(),done:step>=template.steps.length};
+  }).filter(Boolean),12);
+  out.experiences=cap((Array.isArray(data.experiences)?data.experiences:[])
+    .filter(e=>e&&typeof e.text==="string")
+    .map(e=>({id:uid(),kind:clean(e.kind,28),text:clean(e.text,210),
+      at:Number(e.at)||time()})),45);
+  if(data.preferences&&typeof data.preferences==="object"){
+    for(const key of ["garden","craft","explore","read"]){
+      out.preferences[key]=Math.max(1,Math.min(8,Number(data.preferences[key])||2));
+    }
+  }
   // Never import untrusted queued jobs, AI usage counters or internal auth fields.
   out.unread = false;
   return out;
@@ -848,7 +882,10 @@ async function handle(request, env) {
       const input = await bodyOf(request, 220000);
       const restored = safeImport(input);
       await change(env, world => {
+        // Save restoration must never disconnect devices already paired to Pip.
+        const sessions=world.deviceSessions||[];
         Object.assign(world, restored);
+        world.deviceSessions=sessions;
         world.lastTick = time();
         world.nextAction = time() + 75_000;
         world.nextResearch = time() + 6 * 3600_000;
