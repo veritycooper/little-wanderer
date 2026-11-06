@@ -398,3 +398,32 @@ body.dark .room-button.selected{background:var(--rose);color:#25191f}
   .room-controls{max-width:74%;top:6px;right:6px}
   .room-button{font-size:9px;padding:5px 6px}
 }
+
+
+/* Persistent life: real plants, independent projects and visible milestones */
+.life-panel{padding:25px 24px}
+.life-panel h3{margin:8px 0;font-size:20px}
+.garden-progress,.project-progress{margin-top:17px}
+.life-subheading{
+ margin:0 0 11px;
+ letter-spacing:.12em;
+ font-size:10px;
+ font-weight:800;
+ color:var(--rose);
+}
+.life-row{margin:0 0 12px}
+.life-row-labels{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--heading);margin-bottom:6px}
+.life-row-labels span:last-child{font-size:10px;text-align:right;color:var(--muted)}
+.life-bar{
+ height:7px;background:var(--rose-pale);
+ border:1px solid var(--line);
+ overflow:hidden;margin:6px 0 10px;
+}
+.life-bar>div{
+ background:linear-gradient(90deg,#81a58b,#a3c1a1);
+ height:100%;transition:width .5s;
+}
+.project-progress{border-top:1px solid var(--line);padding-top:15px}
+.project-progress>strong{display:block;color:var(--heading);font-size:13px;margin-top:3px}
+.life-completed{color:var(--muted)}
+.life-experience{border-top:1px dashed var(--line);padding-top:11px;line-height:1.65}
