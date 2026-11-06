@@ -427,3 +427,48 @@ body.dark .room-button.selected{background:var(--rose);color:#25191f}
 .project-progress>strong{display:block;color:var(--heading);font-size:13px;margin-top:3px}
 .life-completed{color:var(--muted)}
 .life-experience{border-top:1px dashed var(--line);padding-top:11px;line-height:1.65}
+
+
+/* Two genuinely different ways of talking to the same Pip */
+.conversation-mode{
+ display:flex;gap:7px;margin:1px 22px 14px;
+ border-bottom:1px solid var(--line);
+ padding-bottom:11px;flex-wrap:wrap
+}
+.conversation-mode button{
+ border:1px solid var(--line-strong);
+ background:var(--surface);
+ color:var(--muted);padding:8px 12px;
+ cursor:pointer;font:700 11px 'DM Sans',system-ui,sans-serif;
+}
+.conversation-mode button.selected{
+ color:var(--heading);background:var(--rose-pale);
+ border-color:var(--rose);
+}
+#sendMessageButton:disabled{opacity:.55;cursor:wait}
+.pairing-panel{
+ margin:17px 0 9px;padding:14px;
+ border:1px solid var(--line-strong);
+ background:var(--paper-alt);
+}
+.pairing-panel .eyebrow{margin:0 0 7px}
+.pairing-panel>label{display:block;margin:13px 0 6px}
+.pairing-panel .setting-row{margin-bottom:8px}
+.pair-actions{margin-top:10px}
+.pair-code{
+ padding:12px;margin:11px 0;
+ background:var(--surface);
+ border:1px dashed var(--rose);
+ letter-spacing:.18em;
+ font:800 18px ui-monospace,SFMono-Regular,Consolas,monospace;
+ text-align:center;color:var(--heading);
+ user-select:all;
+}
+.pair-code[hidden]{display:none!important}
+#pairCodeInput{font:600 13px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.07em}
+#claimPairCode:disabled{opacity:.5;cursor:wait}
+@media(max-width:620px){
+ .conversation-mode{margin-left:12px;margin-right:12px}
+ .pairing-panel{padding:10px}
+ .pair-code{letter-spacing:.12em}
+}
