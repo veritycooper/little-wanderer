@@ -1,6 +1,7 @@
 (() => {
 'use strict';
 const $=id=>document.getElementById(id), clamp=n=>Math.max(0,Math.min(100,Math.round(n))), now=()=>Date.now(), rand=a=>a[Math.floor(Math.random()*a.length)];
+const DEFAULT_BRAIN_URL='https://little-wanderer-brain.verity-cooper24.workers.dev';
 const DATA_KEY='little-wanderer-v1',CONFIG_KEY='little-wanderer-config',THEME_KEY='little-wanderer-theme-v2',BACKUP_KEY='little-wanderer-before-cloud-brain-v1',IMPORTED_KEY='little-wanderer-cloud-brain-imported';
 const topics=['wildflowers','the moon','butterflies','forests','mushrooms','stars','birds','oceans','bees','clouds','foxes','seashells'];
 const statMeta=[['hunger','▤','Full tummy'],['energy','☾','Energy'],['social','✉','Social'],['joy','✧','Happiness'],['curiosity','✦','Curiosity']];
@@ -521,6 +522,54 @@ $('outside').addEventListener('click',()=>visitScene(state.lastOutdoor||'meadow'
 $('nightButton').addEventListener('click',()=>{setTheme(!uiNight);renderWorld();save()});
 $('rename').addEventListener('click',async()=>{const name=$('petName').value.trim().slice(0,18);if(!name)return;if(config.url&&config.token){try{const r=await api('/api/name',{method:'POST',body:JSON.stringify({name})});if(r.ok){await sync();return}}catch{}}state.name=name;toast('Your companion is now '+name);save();render()});
 $('connect').addEventListener('click',connect);
+$('generatePairCode').addEventListener('click',async()=>{
+ const el=$('generatedPairCode');
+ el.hidden=true;
+ if(!config.url||!config.token){
+   $('pairStatus').textContent='Connect Pip on this device first, then generate a code for your other device.';
+   return;
+ }
+ try{
+   const response=await api('/api/device/pair/start',{method:'POST',body:'{}'});
+   if(!response.ok){
+     if(response.status===404)throw Error('Your Cloudflare Worker has not deployed the pairing update yet.');
+     throw Error('The brain could not create a pairing code.');
+   }
+   const data=await response.json();
+   el.textContent=data.code;
+   el.hidden=false;
+   $('pairStatus').textContent='Enter this code on your other device within ten minutes. It can be used once.';
+ }catch(e){$('pairStatus').textContent=e?.message||'Unable to create a code.'}
+});
+$('claimPairCode').addEventListener('click',async()=>{
+ const code=$('pairCodeInput').value.trim().toUpperCase().replace(/[\s-]/g,'');
+ if(!/^[A-HJ-NP-Z2-9]{10}$/.test(code)){
+   $('pairStatus').textContent='Enter the ten characters shown by your connected device.';
+   return;
+ }
+ const button=$('claimPairCode');button.disabled=true;
+ try{
+   const response=await fetch(DEFAULT_BRAIN_URL+'/api/device/pair/claim',{
+     method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({code}),signal:AbortSignal.timeout(12000)
+   });
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok){
+     if(response.status===404)throw Error('Cloudflare has not deployed device pairing yet.');
+     if(response.status===410)throw Error('The code has expired or already been used. Make a fresh one.');
+     throw Error(data.detail||'Pairing failed. Check the code and try again.');
+   }
+   if(!data.token||!/^[0-9a-f]{64}$/.test(data.token))throw Error('The brain returned an invalid device session.');
+   $('backendUrl').value=DEFAULT_BRAIN_URL;
+   $('backendToken').value=data.token;
+   await connect();
+   if(!config.url||!config.token)throw Error('Pairing completed, but the new connection could not be saved.');
+   $('pairStatus').textContent='This browser is paired! Pip’s cloud memories and projects are now shared here.';
+   $('pairCodeInput').value='';
+ }catch(e){$('pairStatus').textContent=e?.message||'Unable to connect this browser.'}
+ finally{button.disabled=false}
+});
+
 $('migrateToBrain').addEventListener('click',async()=>{
  if(!config.url||!config.token)return toast('Connect your Cloudflare brain first.');
  const old=localStorage.getItem(BACKUP_KEY);
@@ -541,7 +590,7 @@ $('migrateToBrain').addEventListener('click',async()=>{
 $('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='little-wanderer-memories.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
 $('import').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>2000000)throw Error('Too large');const val=JSON.parse(await file.text());if(!val||val.version!==1||!val.stats||!Array.isArray(val.messages))throw Error('Unsupported save');state={...makeWorld(),...val,lastTick:now()};if(!['meadow','grove','cottage'].includes(state.location))state.location='meadow';uiNight=state.night===true;save();render();toast('Memories restored!')}catch{toast('Could not read that save file.')}e.target.value=''});
 $('reset').addEventListener('click',()=>{if(!confirm('Start a new little world? This clears this browser\'s pet memories. Export first if you wish to keep them.'))return;state=makeWorld();state.night=uiNight;save();render()});
-$('backendUrl').value=config.url||'';$('backendToken').value=config.token||'';
+$('backendUrl').value=config.url||DEFAULT_BRAIN_URL;$('backendToken').value=config.token||'';
 if(config.url&&config.token){preserveBrowserSave();$('connectionLabel').textContent='Connecting to my brain...';sync()}else applyTime();
 updateMigrationButton();
 render();save();
